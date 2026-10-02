@@ -11,7 +11,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 - 🔄 Model picker auto-loaded from LM Studio
 - 📄 “Attach page” in sidebar + right-click menus (on by default — if you install the enterprise policy, uncheck “Show Ask LM Studio in the right-click menu” in Options so you don't get a duplicate menu)
 - ⚙️ Options page for Base URL, model, system prompt, temperature, thinking mode
-- 🔒 Local-first — defaults to `http://localhost:1234`, no telemetry. If you set a custom Base URL (e.g. LAN `http://192.168.x.x:1234` or remote), page selections/context will go there — keep it local for full privacy. Note: the extension requests `http://*/*` + `https://*/*` host access (shown as one “Access your data for all websites” item) so 📄 Attach page can run on any page and so chat can reach LM Studio — the local server sends no CORS headers, so without host access the browser would block it. Chat still goes only to your configured Base URL.
+- 🔒 Local-first — defaults to `http://localhost:1234`, no telemetry. If you set a custom Base URL (e.g. LAN `http://192.168.x.x:1234` or remote), page selections/context will go there — keep it local for full privacy, and use an `https://` Base URL if the server isn't on your machine so traffic is encrypted in transit (see [Privacy](#privacy-data-collection-disclosure)). Note: the extension requests `http://*/*` + `https://*/*` host access (shown as one “Access your data for all websites” item) so 📄 Attach page can run on any page and so chat can reach LM Studio — the local server sends no CORS headers, so without host access the browser would block it. Chat still goes only to your configured Base URL.
 
 ## 1. LM Studio setup (5 min)
 
@@ -83,7 +83,7 @@ talks straight to `localhost:1234` from its own sidebar entry.
 - **Can't reach LM Studio**: Server not started? Wrong port? Check options Base URL ends with `/v1`.
 - **CORS / empty response**: In LM Studio Server settings enable CORS, restart server.
 - **No model**: Load model in LM Studio first, then ··· → Reload LM Studio.
-- **Sidebar not showing**: Firefox 109+. View → Sidebar → LM Studio. `browser.ml.chat` prefs are for native chatbot only, not needed for this extension.
+- **Sidebar not showing**: Firefox 140+ required (the built-in data-collection consent the manifest uses needs it). View → Sidebar → Ask LM Studio. `browser.ml.chat` prefs are for native chatbot only, not needed for this extension.
 
 ## Files
 
@@ -104,6 +104,21 @@ is the chrome design-system (`tokens-shared.css` + `tokens-brand.css`) bundled
 from Firefox 157, because extension pages can't load `chrome://global/skin/…`.
 Both pages load `shared/base.css`, which sets `color-scheme: light dark`,
 and use `light-dark()` tokens, so they follow Firefox's light/dark theme.
+
+## Privacy (data collection disclosure)
+
+Ask LM Studio has **no telemetry, analytics, accounts, or third-party services**. The manifest's `data_collection_permissions` declares exactly what can leave the browser:
+
+| Data | When | Where it goes |
+|---|---|---|
+| Chat messages you type | Every message you send | Only the Base URL configured in Options — default `http://localhost:1234`, a program on your own machine |
+| Attached page text (first ~12,000 chars) or selected text (first ~8,000 chars) | Only when you click Attach page or a right-click prompt | Same configured server |
+| The page's URL | Same as above | Same configured server |
+
+- **Why:** solely to generate the model's reply — the extension's whole purpose. Nothing else (browsing history, identifiers, device info, usage statistics) is ever sent anywhere.
+- **Storage:** settings and chat history stay in the browser; the queued right-click prompt uses in-memory (`storage.session`) data that Firefox clears on exit, so nothing from private windows is retained across sessions. Whatever your configured server keeps is under your control.
+- **Control:** keep the default localhost Base URL and nothing leaves your machine. For a remote server, use an `https://` Base URL so data is encrypted in transit.
+- **Sharing:** none. There are no third parties; the destination server is one you chose.
 
 License: [GPL-2.0](LICENSE) — local-first. By default no data leaves your machine; a custom Base URL sends prompts there.
 Exception: `shared/firefox-tokens.css` is bundled Mozilla code under [MPL-2.0](https://www.mozilla.org/MPL/2.0/).
