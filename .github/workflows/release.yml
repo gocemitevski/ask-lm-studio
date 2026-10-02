@@ -24,8 +24,8 @@ jobs:
         with:
           node-version: 22
 
-      - name: Lint (fails on errors)
-        run: npx --yes web-ext lint
+      - name: Lint (warnings are errors)
+        run: npx --yes web-ext lint --warnings-as-errors
 
       - name: Build zip
         run: npx --yes web-ext build --overwrite-dest
