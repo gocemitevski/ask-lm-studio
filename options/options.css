@@ -1,0 +1,127 @@
+/* Ask LM Studio options — same Firefox design tokens as the sidebar, so the
+   page follows the browser theme (color-scheme + light-dark() tokens). */
+
+:root {
+  color-scheme: light dark;
+  font: message-box;
+  font-size: var(--font-size-root, 15px);
+  line-height: 1.4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0 auto;
+  padding: var(--space-medium, 0.75rem);
+  max-width: 640px;
+  min-width: 280px;
+  background: var(--background-color-canvas, Canvas);
+  color: var(--text-color, CanvasText);
+}
+
+h3 {
+  margin: var(--space-large, 1rem) 0 var(--space-small, 0.5rem);
+  font-weight: var(--font-weight-heading, 600);
+}
+h3:first-of-type { margin-top: 0; }
+
+label {
+  display: block;
+  margin: var(--space-medium, 0.75rem) 0 var(--space-xsmall, 0.25rem);
+  font-weight: var(--font-weight-semibold, 600);
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: var(--space-xsmall, 0.25rem) var(--space-small, 0.5rem);
+  min-height: var(--input-text-min-height, auto);
+  border: var(--input-text-border, 1px solid var(--border-color));
+  border-radius: var(--input-text-border-radius, 8px);
+  background: var(--input-text-background-color, Field);
+  color: var(--input-text-color, FieldText);
+  font: inherit;
+}
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, currentColor 55%, transparent);
+}
+textarea { resize: vertical; }
+
+/* Checkboxes keep the UA widget (accent-color theming), not the text-field
+   recipe above. */
+input[type="checkbox"] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  accent-color: var(--color-accent-primary, Highlight);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-small, 0.5rem);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-medium, 0.75rem);
+}
+/* Checkbox rows: plain-weight label text (matches the native option rows). */
+.row label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xsmall, 0.25rem);
+  margin: 0;
+  font-weight: 400;
+}
+
+button {
+  font: inherit;
+  font-weight: var(--button-font-weight, 600);
+  padding: var(--space-xsmall, 0.25rem) var(--space-small, 0.5rem);
+  min-height: var(--button-min-height-small, auto);
+  border: var(--button-border, none);
+  border-radius: var(--button-border-radius, 8px);
+  background: var(--button-background-color, ButtonFace);
+  color: var(--button-text-color, ButtonText);
+  cursor: pointer;
+}
+button:hover { background: var(--button-background-color-hover); }
+button:active { background: var(--button-background-color-active); }
+button:focus-visible {
+  outline: var(--focus-outline, 2px solid AccentColor);
+  outline-offset: var(--focus-outline-offset, 2px);
+}
+
+/* Save is the primary action of the page. */
+#save {
+  background: var(--button-background-color-primary, Highlight);
+  color: var(--button-text-color-primary, HighlightText);
+}
+#save:hover { background: var(--button-background-color-primary-hover); }
+#save:active { background: var(--button-background-color-primary-active); }
+
+#status {
+  margin-top: var(--space-small, 0.5rem);
+  font-size: var(--font-size-small, 0.867rem);
+}
+#status:empty { display: none; }
+
+hr {
+  border: none;
+  border-top: 1px solid var(--border-color, rgba(128, 128, 128, 0.45));
+  margin: var(--space-large, 1rem) 0 var(--space-small, 0.5rem);
+}
+
+p.note {
+  margin: var(--space-small, 0.5rem) 0;
+  font-size: var(--font-size-small, 0.867rem);
+  opacity: 0.85;
+}
+
+:focus-visible {
+  outline: var(--focus-outline, 2px solid AccentColor);
+  outline-offset: var(--focus-outline-offset, 2px);
+}

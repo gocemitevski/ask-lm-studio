@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Ask LM Studio Settings</title>
+<link rel="stylesheet" href="../shared/firefox-tokens.css" />
+<link rel="stylesheet" href="options.css" />
+</head>
+<body>
+<h3>LM Studio connection</h3>
+<label>Base URL (OpenAI-compatible)</label>
+<input id="baseUrl" placeholder="http://localhost:1234/v1" />
+<label>Preferred model (optional — auto-detected)</label>
+<input id="model" placeholder="e.g. llama-3.2-3b-instruct" />
+<label>System prompt</label>
+<textarea id="systemPrompt" rows="3"></textarea>
+<label>Temperature</label>
+<input id="temperature" type="number" step="0.1" min="0" max="2" />
+<div class="row">
+<label title="The reply appears while the model is still writing it, like a live chat. Turn this off to wait for the complete answer to appear in one go."><input id="stream" type="checkbox"> Show answers as they're generated (not all at once)</label>
+</div>
+<div class="row">
+<label title="For models that support thinking (e.g. DeepSeek-R1, Qwen QwQ): the model reasons through the problem first — a short wait before the answer appears, often a better reply. Turn this off for answers that start immediately. Turning it off sends a 'no thinking' flag, which servers other than LM Studio may not accept."><input id="thinking" type="checkbox"> Thinking mode — let the model reason before answering</label>
+</div>
+<div class="row">
+<label title="Right-click text or a page for quick actions like Summarize and Quiz me. Leave this on — if you've installed the enterprise policy (README §4), its menu offers the same actions, so uncheck here to avoid seeing them twice."><input id="showOwnMenu" type="checkbox"> Show “Ask LM Studio” in the right-click menu</label>
+</div>
+<div class="row">
+<button id="save">Save</button>
+<button id="test">Test connection</button>
+</div>
+<div id="status"></div>
+<hr>
+<h3>Use inside Firefox's built-in AI chatbot?</h3>
+<p class="note">
+Firefox does not allow extensions to add themselves to the built-in
+Gemini / ChatGPT provider list via WebExtensions API.
+Use <b>Enterprise Policy</b> (see <code>policies/lm-studio.json</code>) or manual
+<code>about:config</code> below. The native chatbot just iframes a web-chat URL,
+so point it at a web UI fronting LM Studio (e.g. Open WebUI → LM Studio).
+</p>
+<label>Extension page URL (for manual about:config test)</label>
+<input id="extUrl" readonly />
+<div class="row">
+<button id="copyExtUrl" type="button">Copy URL</button>
+</div>
+<p class="note">
+Manual test: set <code>browser.ml.chat.provider</code> to
+<code>http://localhost:3000/?temporary-chat=true</code> and
+<code>browser.ml.chat.hideLocalhost=false</code>. Pasting this extension's own URL
+(Copy URL) is experimental — Firefox may refuse to iframe <code>moz-extension://</code>
+pages from the chatbot, so verify it actually loads in your version before
+relying on it. See README §4.
+</p>
+<script src="../shared/config.js"></script>
+<script src="options.js"></script>
+</body>
+</html>
