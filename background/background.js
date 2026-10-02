@@ -57,23 +57,36 @@ if (browser.menus.onShown) {
 }
 
 async function enqueuePending(payload) {
+  // storage.session (memory-only) so queued selection text/URLs are never
+  // written to disk — Firefox clears it at shutdown, which also keeps data
+  // from private browsing sessions out of persistent storage (Add-on
+  // Policies §6.3).
   try {
-    const { pendingPrompts } = await browser.storage.local.get("pendingPrompts");
+    const { pendingPrompts } = await browser.storage.session.get("pendingPrompts");
     const queue = Array.isArray(pendingPrompts) ? pendingPrompts : [];
     queue.push(payload);
     // cap queue so rapid clicks don't grow storage unbounded
-    await browser.storage.local.set({ pendingPrompts: queue.slice(-5) });
+    await browser.storage.session.set({ pendingPrompts: queue.slice(-5) });
   } catch (_) {
-    try { await browser.storage.local.set({ pendingPrompts: [payload] }); } catch (_) {}
+    try { await browser.storage.session.set({ pendingPrompts: [payload] }); } catch (_) {}
   }
 }
 
 browser.runtime.onInstalled.addListener(async () => {
   await ensureMenus();
-  // Note: no auto-open — native chatbot is primary UX (see manifest open_at_install=false).
+  // Drop any queue left in persistent storage by older versions.
+  try {
+    await browser.storage.local.remove(["pendingPrompts", "pendingPrompt"]);
+  } catch (_) {}
+  // Note: no auto-open — native chatbot is primary UX (manifest open_at_install=false).
 });
 
-browser.runtime.onStartup.addListener(ensureMenus);
+browser.runtime.onStartup.addListener(async () => {
+  await ensureMenus();
+  try {
+    await browser.storage.local.remove(["pendingPrompts", "pendingPrompt"]);
+  } catch (_) {}
+});
 
 // Toggle duplicate menus live from Options page
 browser.storage.onChanged.addListener((changes, area) => {

@@ -808,7 +808,10 @@ browser.runtime.onMessage.addListener((msg) => {
   await fetchModels();
   // Consume any prompts queued while sidebar was opening (background pendingPrompts queue).
   try {
-    const { pendingPrompts, pendingPrompt } = await browser.storage.local.get(["pendingPrompts", "pendingPrompt"]);
+    // storage.session (memory-only) matches the background queue — queued
+    // selection text never touches disk, so private-window prompts aren't
+    // retained across sessions (Add-on Policies §6.3).
+    const { pendingPrompts, pendingPrompt } = await browser.storage.session.get(["pendingPrompts", "pendingPrompt"]);
     const queue = [];
     if (Array.isArray(pendingPrompts)) queue.push(...pendingPrompts);
     // Back-compat single-slot
@@ -821,8 +824,8 @@ browser.runtime.onMessage.addListener((msg) => {
       for (const item of queue) {
         (await isForThisWindow(item) ? mine : others).push(item);
       }
-      if (others.length) await browser.storage.local.set({ pendingPrompts: others });
-      else await browser.storage.local.remove(["pendingPrompts", "pendingPrompt"]);
+      if (others.length) await browser.storage.session.set({ pendingPrompts: others });
+      else await browser.storage.session.remove(["pendingPrompts", "pendingPrompt"]);
       for (const item of mine.slice(-5)) {
         await dispatchAskItem(item);
       }
