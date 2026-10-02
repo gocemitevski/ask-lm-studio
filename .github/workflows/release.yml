@@ -1,6 +1,8 @@
 # Publishes a GitHub Release whenever a version tag (v*) is pushed:
-#   git tag v1.0.1 && git push origin main v1.0.1
-# Update the "body" below for each release before pushing its tag.
+#   git tag v1.0.2 && git push origin main v1.0.2
+# The release notes are generated automatically: intro + "Changes since
+# <previous tag>" (git log of the tag range) + Requirements/Install.
+# No manual editing per release — just push the tag.
 name: Release
 
 on:
@@ -15,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history + tags, needed to find the previous tag
 
       - uses: actions/setup-node@v4
         with:
@@ -26,28 +30,45 @@ jobs:
       - name: Build zip
         run: npx --yes web-ext build --overwrite-dest
 
+      - name: Generate release notes
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          # Nearest tag reachable from this tag's parent (empty on first release)
+          PREV=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null || true)
+          if [ -n "$PREV" ]; then
+            HEADER="Changes since ${PREV}"
+            CHANGES=$(git log --no-merges --pretty=format:'- %s ([%h](https://github.com/'"${REPO}"'/commit/%H))' "${PREV}..${TAG}" || true)
+          else
+            HEADER="Changes"
+            CHANGES=""
+          fi
+          if [ -z "$CHANGES" ]; then
+            CHANGES="- First release."
+          fi
+          {
+            printf '%s\n\n' "Local-first AI chat in the Firefox sidebar — talks directly to LM Studio's OpenAI-compatible server."
+            printf '## %s\n\n' "$HEADER"
+            printf '%s\n\n' "$CHANGES"
+            cat <<'EOF'
+          ## Requirements
+          - Firefox 140+ (149+ for the enterprise policy)
+          - LM Studio running a local model (default `http://localhost:1234/v1`)
+
+          ## Install
+          Download the zip, then `about:debugging → This Firefox → Load Temporary Add-on…` and pick `manifest.json` inside the zip (temporary until signed on AMO).
+
+          Full setup guide: the README.
+          EOF
+          } > "$RUNNER_TEMP/notes.md"
+          echo "--- notes.md ---"
+          cat "$RUNNER_TEMP/notes.md"
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
           name: Ask LM Studio ${{ github.ref_name }}
           files: web-ext-artifacts/*.zip
-          generate_release_notes: true
-          body: |
-            Local-first AI chat in the Firefox sidebar — talks directly to LM Studio's OpenAI-compatible server.
-
-            ### Highlights
-            - **Sidebar chat**: streaming responses, model picker loaded from the server, chat history, stop/restart
-            - **Native-chatbot parity**: right-click *Summarize / Explain this / Quiz me / Proofread* with the same labels and prompt texts as Firefox's built-in AI chatbot, plus *Attach page* to ask about the current page
-            - **Thinking mode** toggle, temperature, system prompt, and Base URL in Options
-            - **Firefox-native look**: styled with Firefox 157 design tokens, follows your light/dark theme
-            - **Native dropdown membership**: `policies/lm-studio.json` adds "LM Studio (local)" to Firefox's built-in AI chatbot list via Enterprise Policy (Firefox 149+)
-            - **Privacy**: no telemetry; the manifest's data declaration covers exactly what's sent — your messages, and page text/URL only when you attach or right-click — and only to the server you configured
-
-            ### Requirements
-            - Firefox 140+ (149+ for the enterprise policy)
-            - LM Studio running a local model (default `http://localhost:1234/v1`)
-
-            ### Install
-            Download the zip, then `about:debugging → This Firefox → Load Temporary Add-on…` and pick `manifest.json` inside the zip (temporary until signed on AMO).
-
-            Full setup guide: see the README.
+          body_path: ${{ runner.temp }}/notes.md
