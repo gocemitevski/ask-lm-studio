@@ -105,5 +105,5 @@ from Firefox 157, because extension pages can't load `chrome://global/skin/…`.
 Both pages load `shared/base.css`, which sets `color-scheme: light dark`,
 and use `light-dark()` tokens, so they follow Firefox's light/dark theme.
 
-License: MIT — local-first. By default no data leaves your machine; a custom Base URL sends prompts there.
-Exception: `shared/firefox-tokens.css` is bundled Mozilla code under MPL-2.0.
+License: [GPL-2.0](LICENSE) — local-first. By default no data leaves your machine; a custom Base URL sends prompts there.
+Exception: `shared/firefox-tokens.css` is bundled Mozilla code under [MPL-2.0](https://www.mozilla.org/MPL/2.0/).
