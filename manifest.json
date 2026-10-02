@@ -3,7 +3,7 @@
   "name": "Ask LM Studio",
   "version": "1.0.1",
   "description": "Use LM Studio local models directly in the Firefox sidebar. Local-first: defaults to localhost; page attachment needs http/https access to extract text.",
-  "homepage_url": "https://lmstudio.ai",
+  "homepage_url": "https://github.com/gocemitevski/ask-lm-studio",
   "icons": {
     "16": "icons/icon-16.png",
     "32": "icons/icon-32.png",
