@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ask LM Studio",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Chat with LM Studio local models in the Firefox sidebar. Local-first: prompts and attached page text go only to your configured server (localhost by default); attaching a page needs access to all sites.",
   "homepage_url": "https://github.com/gocemitevski/ask-lm-studio",
   "icons": {
