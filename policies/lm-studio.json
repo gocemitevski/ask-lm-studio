@@ -1,0 +1,30 @@
+{
+  "policies": {
+    "AIChatbot": {
+      "Providers": {
+        "BuiltIn": {
+          "Anthropic Claude": true,
+          "ChatGPT": true,
+          "Copilot": true,
+          "Google Gemini": true,
+          "HuggingChat": true,
+          "Le Chat Mistral": true,
+          "localhost": true
+        },
+        "Default": "LM Studio (local)",
+        "Add": [
+          {
+            "id": "lmstudio-local",
+            "name": "LM Studio (local)",
+            "url": "http://localhost:3000/?temporary-chat=true",
+            "iconUrl": "http://localhost:3000/favicon.png",
+            "queryParam": "q"
+          }
+        ]
+      },
+      "Prompts": {
+        "Enabled": true
+      }
+    }
+  }
+}
