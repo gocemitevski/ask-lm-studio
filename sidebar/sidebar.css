@@ -1,0 +1,427 @@
+/* Ask LM Studio sidebar — component styles.
+   Tokens (spacing, colors, radii, buttons, shadows) come from
+   firefox-tokens.css — the Firefox chrome design-system, bundled because
+   extension pages can't load chrome://global/skin/....
+   Layout mirrors native genai/chat.html: #header → status → #chat → #footer. */
+
+:root {
+  color-scheme: light dark;
+  /* Same root typography Firefox chrome pages use (design-system
+     text-and-typography.css): the platform message-box font, sized to the
+     design-system root size (15px). */
+  font: message-box;
+  font-size: var(--font-size-root, 15px);
+  line-height: 1.4;
+
+  /* Masked glyphs (they pick up currentColor) for send/stop and the
+     context-row buttons — keeps the emoji out of the chrome. */
+  --send-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M8 13.2V3.6M3.8 7.8 8 3.6l4.2 4.2'/%3E%3C/svg%3E");
+  --stop-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='3.5' y='3.5' width='9' height='9' rx='1.5' fill='black'/%3E%3C/svg%3E");
+  --attach-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='1.5' stroke-linejoin='round' d='M9.3 2.2H5.2a1.5 1.5 0 0 0-1.5 1.5v8.6a1.5 1.5 0 0 0 1.5 1.5h5.6a1.5 1.5 0 0 0 1.5-1.5V5.1L9.3 2.2Zm.1.4v2.7h2.7'/%3E%3C/svg%3E");
+  --detach-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' d='M4.5 4.5l7 7m0-7-7 7'/%3E%3C/svg%3E");
+  --trash-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M3.5 4.3h9M6.3 4.3V3.2c0-.4.3-.7.7-.7h2c.4 0 .7.3.7.7v1.1M5 4.5l.6 8.2c0 .6.5 1.1 1.1 1.1h2.6c.6 0 1.1-.5 1.1-1.1l.6-8.2M6.7 6.7v4.4M9.3 6.7v4.4'/%3E%3C/svg%3E");
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background-color: var(--background-color-canvas, Canvas);
+  color: var(--text-color, CanvasText);
+}
+
+button, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible {
+  outline: var(--focus-outline, 2px solid AccentColor);
+  outline-offset: var(--focus-outline-offset, 2px);
+}
+
+/* Subtle hover transitions on the interactive chrome. */
+#header select,
+#header-more,
+#prompts-row button,
+.context-row button,
+#send,
+#header-menu button {
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+
+/* ---- Native #header: provider switcher + status dot + ··· menu ---- */
+#header {
+  align-items: center;
+  background-color: var(--sidebar-background-color, var(--background-color-canvas));
+  color: var(--sidebar-text-color, var(--text-color));
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: row;
+  gap: var(--space-small);
+  padding-inline: var(--space-large);
+  padding-block: var(--space-xsmall);
+  position: relative;
+}
+#header select {
+  background-color: var(--button-background-color-ghost);
+  border: none;
+  border-radius: var(--border-radius-small);
+  color: var(--button-text-color-ghost);
+  flex: 1;
+  height: var(--button-size-icon);
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  padding-inline: var(--space-small);
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+#header select:hover {
+  background-color: var(--button-background-color-ghost-hover);
+  color: var(--button-text-color-ghost-hover);
+}
+
+#permissions-indicator {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--space-xxsmall);
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--border-radius-circle);
+  background: var(--color-red-60);
+  display: inline-block;
+}
+.dot.ok { background: var(--color-green-60); }
+.dot.warn { background: var(--color-yellow-60); }
+
+#header-more {
+  align-items: center;
+  background: var(--button-background-color-ghost);
+  border: none;
+  border-radius: var(--border-radius-medium);
+  color: var(--button-text-color-ghost);
+  cursor: pointer;
+  display: flex;
+  height: var(--button-size-icon);
+  justify-content: center;
+  padding: 0;
+  width: var(--button-size-icon);
+}
+#header-more:hover {
+  background: var(--button-background-color-ghost-hover);
+  color: var(--button-text-color-ghost-hover);
+}
+
+#header-menu {
+  position: absolute;
+  top: calc(100% + var(--space-xsmall));
+  inset-inline-end: var(--space-small);
+  display: flex;
+  flex-direction: column;
+  background: var(--background-color-box);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-large);
+  box-shadow: var(--box-shadow-level-4);
+  padding: var(--space-xsmall);
+  z-index: 10;
+  min-width: 240px;
+}
+#header-menu[hidden] { display: none; }
+#header-menu button {
+  align-items: center;
+  text-align: start;
+  border: none;
+  background: transparent;
+  border-radius: var(--border-radius-small);
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  min-height: var(--size-item-large);
+  padding: var(--space-xsmall) var(--space-small);
+  width: 100%;
+}
+#header-menu button:hover { background: var(--button-background-color-hover); }
+#header-menu button[role="menuitemcheckbox"]::before {
+  content: "";
+  display: inline-block;
+  flex: 0 0 var(--icon-size-small);
+  width: var(--icon-size-small);
+  margin-inline-end: var(--space-small);
+}
+#header-menu button[role="menuitemcheckbox"][aria-checked="true"]::before {
+  content: "✓";
+  font-size: var(--font-size-small);
+}
+#header-menu [role="separator"] {
+  border-top: 1px solid var(--border-color);
+  margin: var(--space-xsmall) 0;
+}
+
+/* ---- Status line: Firefox message-bar pattern, colored by state ---- */
+.status {
+  align-items: center;
+  display: flex;
+  gap: var(--space-xsmall);
+  /* min-height: var(--size-item-large); */
+  margin: var(--space-small) var(--space-medium) 0;
+  padding: var(--space-small) var(--space-small);
+  border-radius: var(--border-radius-medium);
+  font-size: var(--font-size-small);
+  line-height: 1.3;
+}
+.status.ok {
+  background: var(--background-color-success);
+  color: light-dark(var(--color-green-100), var(--color-green-10));
+}
+.status.warn {
+  background: var(--background-color-warning);
+  color: light-dark(var(--color-yellow-100), var(--color-yellow-10));
+}
+.status.err {
+  background: var(--background-color-critical);
+  color: light-dark(var(--color-red-100), var(--color-red-10));
+}
+.status code { font-family: ui-monospace, Consolas, "Liberation Mono", monospace; }
+
+/* ---- Setup help: quiet info card ---- */
+.help {
+  background: var(--background-color-box-info);
+  border-radius: var(--border-radius-medium);
+  font-size: var(--font-size-small);
+  margin: var(--space-small) var(--space-medium) 0;
+  padding: var(--space-medium);
+}
+.help ol { margin: 0; padding-inline-start: var(--space-large); }
+.help li { margin-block: var(--space-xxsmall); }
+.help code { font-size: inherit; }
+
+/* ---- Messages: soft full-width cards, accent-tinted user turn ---- */
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-medium);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-medium);
+  min-height: 0;
+  scrollbar-color: var(--border-color-deemphasized) transparent;
+  scrollbar-width: thin;
+}
+.msg {
+  border-radius: var(--border-radius-large);
+  padding: var(--space-medium);
+  word-wrap: break-word;
+}
+.msg.user {
+  background: color-mix(in srgb, var(--color-accent-primary) 14%, var(--background-color-box));
+  align-self: flex-end;
+  max-width: 88%;
+  white-space: pre-wrap;
+}
+.msg.assistant {
+  background: var(--background-color-box);
+  align-self: stretch;
+}
+.msg.system {
+  color: var(--text-color-deemphasized);
+  padding: var(--space-xxsmall) var(--space-small);
+  font-size: var(--font-size-small);
+  white-space: pre-wrap;
+}
+.msg .role {
+  color: var(--text-color-deemphasized);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-small);
+  margin-bottom: var(--space-xsmall);
+}
+.msg .body p { margin: 0 0 var(--space-small) }
+.msg .body p:last-child { margin-bottom: 0; }
+.msg .body ul,
+.msg .body ol { margin: var(--space-small) 0; padding-inline-start: var(--space-large); }
+.msg .body a { color: var(--color-accent-primary); }
+.msg .body pre {
+  background: color-mix(in srgb, currentColor 7%, transparent);
+  border-radius: var(--border-radius-medium);
+  margin: var(--space-small) 0;
+  overflow-x: auto;
+  padding: var(--space-small);
+  font-size: var(--font-size-small);
+}
+.msg .body code { font-family: ui-monospace, Consolas, "Liberation Mono", monospace; font-size: var(--font-size-small); }
+.msg .body pre code { font-size: inherit; }
+
+/* Thinking indicator: three dots while the stream has produced nothing yet. */
+.typing {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xsmall);
+  padding-block: var(--space-xxsmall);
+}
+.typing span {
+  background: currentColor;
+  border-radius: var(--border-radius-circle);
+  height: 4px;
+  width: 4px;
+  opacity: 0.35;
+  animation: typing-bounce 1.2s ease-in-out infinite;
+}
+.typing span:nth-child(2) { animation-delay: 0.15s; }
+.typing span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes typing-bounce {
+  0%, 60%, 100% { opacity: 0.35; transform: translateY(0); }
+  30% { opacity: 1; transform: translateY(-4px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .typing span { animation: none; opacity: 0.6; }
+}
+
+/* ---- Shared secondary-button styling (native button tokens) ---- */
+#prompts-row button,
+.context-row button {
+  background: var(--button-background-color);
+  border: none;
+  color: var(--button-text-color);
+  cursor: pointer;
+  font-weight: var(--button-font-weight);
+  min-height: var(--button-min-height-small);
+  padding: var(--space-xsmall) var(--space-small);
+}
+#prompts-row button:hover,
+.context-row button:hover { background: var(--button-background-color-hover); }
+#prompts-row button:active,
+.context-row button:active { background: var(--button-background-color-active); }
+
+/* ---- Quick prompts: pill chips, centered, only while chat is empty ---- */
+#prompts-row {
+  display: flex;
+  gap: var(--space-small);
+  justify-content: stretch;
+  flex-wrap: wrap;
+  padding: var(--space-small) var(--space-medium);
+}
+#prompts-row[hidden] { display: none; }
+#prompts-row button {
+  border-radius: var(--border-radius-circle);
+  font-size: var(--font-size-medium);
+  padding-inline: var(--space-medium);
+}
+
+/* ---- Context row: attach / clear / page badge ---- */
+.context-row {
+  display: flex;
+  gap: var(--space-small);
+  /* Sits under the composer, above the footer divider — a bit more room below. */
+  padding: var(--space-xsmall) var(--space-medium) var(--space-small);
+  align-items: center;
+}
+.context-row button {
+  border-radius: var(--border-radius-medium);
+  font-size: var(--font-size-small);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xxsmall);
+}
+.context-row button::before {
+  content: "";
+  background: currentColor;
+  height: var(--icon-size-xsmall);
+  width: var(--icon-size-xsmall);
+  -webkit-mask: var(--attach-icon) center / contain no-repeat;
+  mask: var(--attach-icon) center / contain no-repeat;
+}
+#attachPage.attached::before {
+  -webkit-mask-image: var(--detach-icon);
+  mask-image: var(--detach-icon);
+}
+#clearChat::before {
+  -webkit-mask: var(--trash-icon) center / contain no-repeat;
+  mask: var(--trash-icon) center / contain no-repeat;
+}
+.context-row button.attached {
+  background: color-mix(in srgb, var(--color-green-50) 25%, transparent);
+}
+.page-badge {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 45%;
+}
+
+/* ---- Composer: rounded field + circular send ---- */
+#composer {
+  display: flex;
+  gap: var(--space-small);
+  align-items: flex-end;
+  padding: var(--space-small) var(--space-medium) var(--space-medium);
+}
+#input {
+  flex: 1;
+  min-width: 0;
+  resize: none;
+  field-sizing: content;
+  border: 1px solid var(--border-color-deemphasized);
+  border-radius: var(--border-radius-large);
+  padding: var(--space-small) var(--space-medium);
+  background: var(--background-color-box);
+  color: inherit;
+  min-height: calc(2 * 1.4em + var(--space-medium));
+  max-height: 160px;
+}
+#input::placeholder { color: var(--text-color-deemphasized); }
+#input:hover { border-color: var(--border-color-interactive); }
+#input:focus {
+  border-color: transparent;
+  outline: var(--focus-outline);
+  outline-offset: var(--focus-outline-offset);
+}
+#send {
+  align-items: center;
+  justify-content: center;
+  min-width: var(--button-size-icon);
+  height: var(--button-size-icon);
+  width: var(--button-size-icon);
+  border: none;
+  background: var(--button-background-color-primary);
+  color: var(--button-text-color-primary);
+  border-radius: var(--border-radius-circle);
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+}
+#send:hover { background: var(--button-background-color-primary-hover); }
+#send:active { background: var(--button-background-color-primary-active); }
+#send::before {
+  content: "";
+  background: currentColor;
+  height: var(--icon-size-small);
+  width: var(--icon-size-small);
+  -webkit-mask: var(--send-icon) center / contain no-repeat;
+  mask: var(--send-icon) center / contain no-repeat;
+}
+#send[data-stop]::before {
+  -webkit-mask-image: var(--stop-icon);
+  mask-image: var(--stop-icon);
+}
+
+/* ---- Footer: muted hint only. The native "Summarize page" button was
+   dropped — the empty-chat "Summarize" chip covers the same action. ---- */
+#footer {
+  border-top: 1px solid var(--border-color);
+  padding: var(--space-small) var(--space-medium) var(--space-medium);
+  display: flex;
+  flex-direction: column;
+}
+.hint {
+  color: var(--text-color-deemphasized);
+  font-size: var(--font-size-small);
+  text-align: center;
+}
+.hint code { font-size: inherit; }
+code { font-family: ui-monospace, Consolas, "Liberation Mono", monospace; }

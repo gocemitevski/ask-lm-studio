@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="color-scheme" content="light dark" />
+  <title>Ask LM Studio</title>
+  <link rel="stylesheet" href="../shared/firefox-tokens.css" />
+  <link rel="stylesheet" href="sidebar.css" />
+</head>
+<body>
+  <!-- Mirrors native genai/chat.html: #header → status → #chat → #footer. -->
+  <header id="header">
+    <select id="modelSelect" title="Choose a chatbot"></select>
+    <span id="permissions-indicator" title="Runs locally"><span class="dot" id="statusDot"></span></span>
+    <button id="header-more" title="AI Chat settings" aria-label="AI Chat settings" aria-haspopup="menu" aria-expanded="false">
+      <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <circle cx="3" cy="8" r="1.5" fill="currentColor" />
+        <circle cx="8" cy="8" r="1.5" fill="currentColor" />
+        <circle cx="13" cy="8" r="1.5" fill="currentColor" />
+      </svg>
+    </button>
+    <div id="header-menu" hidden role="menu">
+      <button role="menuitem" id="menu-reload">Reload LM Studio</button>
+      <div role="separator"></div>
+      <button role="menuitem" id="menu-newchat">New chat</button>
+      <div role="separator"></div>
+      <button role="menuitemcheckbox" id="menu-shortcut" aria-checked="true">Show shortcut when selecting text</button>
+      <div role="separator"></div>
+      <button role="menuitem" id="menu-settings">Settings…</button>
+    </div>
+  </header>
+
+  <!-- Persistent connection status (always visible, colored by state). -->
+  <div id="statusBar" class="status warn"><span>Checking LM Studio…</span></div>
+
+  <div id="setupHelp" class="help" hidden>
+    <ol>
+      <li>Open <b>LM Studio → Developer → Start Server</b> (port <code>1234</code>)</li>
+      <li>Load a model in LM Studio</li>
+      <li>Enable CORS if you see fetch errors</li>
+      <li>Open ··· → Reload LM Studio</li>
+    </ol>
+  </div>
+
+  <main id="chat" aria-live="polite"></main>
+
+  <!-- Quick prompts — shown only while the conversation is empty. -->
+  <div id="prompts-row" role="toolbar" aria-label="Quick prompts">
+    <button data-prompt="ask-summarize" title="Summarize the attached page or typed text">Summarize</button>
+    <button data-prompt="ask-explain" title="Explain the attached page or typed text">Explain this</button>
+    <button data-prompt="ask-quiz" title="Quiz me on the attached page or typed text">Quiz me</button>
+    <button data-prompt="ask-proofread" title="Proofread the attached page or typed text">Proofread</button>
+  </div>
+
+  <form id="composer">
+    <textarea id="input" rows="3" placeholder="Ask LM Studio…" aria-label="Ask LM Studio"></textarea>
+    <button type="submit" id="send" title="Send" aria-label="Send"></button>
+  </form>
+
+  <div class="context-row">
+    <button id="attachPage" title="Attach current page text as context">Attach page</button>
+    <button id="clearChat" title="Clear conversation">Clear</button>
+    <span id="pageBadge" class="page-badge" hidden></span>
+  </div>
+
+  <footer id="footer">
+    <span class="hint">Local model via <code>/v1/chat/completions</code> · no cloud</span>
+  </footer>
+
+  <script src="../shared/config.js"></script>
+  <script src="sidebar.js"></script>
+</body>
+</html>
