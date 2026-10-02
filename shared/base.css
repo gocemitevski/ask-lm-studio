@@ -1,0 +1,27 @@
+/* Shared base styling for extension pages (sidebar + options): theme-aware
+   typography and colors from the bundled Firefox design tokens. Page-specific
+   layout lives in sidebar.css / options.css. */
+
+:root {
+  color-scheme: light dark;
+  /* Same root typography Firefox chrome pages use (design-system
+     text-and-typography.css): the platform message-box font, sized to the
+     design-system root size (15px). */
+  font: message-box;
+  font-size: var(--font-size-root, 15px);
+  line-height: 1.4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background-color: var(--background-color-canvas, Canvas);
+  color: var(--text-color, CanvasText);
+}
+
+button, select, textarea { font: inherit; color: inherit; }
+
+:focus-visible {
+  outline: var(--focus-outline, 2px solid AccentColor);
+  outline-offset: var(--focus-outline-offset, 2px);
+}

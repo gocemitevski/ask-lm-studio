@@ -1,22 +1,11 @@
-/* Ask LM Studio options — same Firefox design tokens as the sidebar, so the
-   page follows the browser theme (color-scheme + light-dark() tokens). */
-
-:root {
-  color-scheme: light dark;
-  font: message-box;
-  font-size: var(--font-size-root, 15px);
-  line-height: 1.4;
-}
-
-* { box-sizing: border-box; }
+/* Ask LM Studio options — page layout only; theme/typography and design
+   tokens come from ../shared/base.css + ../shared/firefox-tokens.css. */
 
 body {
   margin: 0 auto;
   padding: var(--space-medium, 0.75rem);
   max-width: 640px;
   min-width: 280px;
-  background: var(--background-color-canvas, Canvas);
-  color: var(--text-color, CanvasText);
 }
 
 h3 {
@@ -90,10 +79,6 @@ button {
 }
 button:hover { background: var(--button-background-color-hover); }
 button:active { background: var(--button-background-color-active); }
-button:focus-visible {
-  outline: var(--focus-outline, 2px solid AccentColor);
-  outline-offset: var(--focus-outline-offset, 2px);
-}
 
 /* Save is the primary action of the page. */
 #save {
@@ -119,9 +104,4 @@ p.note {
   margin: var(--space-small, 0.5rem) 0;
   font-size: var(--font-size-small, 0.867rem);
   opacity: 0.85;
-}
-
-:focus-visible {
-  outline: var(--focus-outline, 2px solid AccentColor);
-  outline-offset: var(--focus-outline-offset, 2px);
 }

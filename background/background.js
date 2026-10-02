@@ -12,58 +12,30 @@ async function shouldShowOwnMenus() {
   }
 }
 
+// Menu definitions. No icons — matches the native "Ask {provider}" submenu
+// (GenAI.sys.mjs buildAskChatMenu), which is plain text with no
+// extension/brand icons. Selection items use verbatim native genai-prompts
+// labels (genai.ftl). The two page items (native shows "Summarize Page" +
+// "Open {provider}" instead of the selection prompts when nothing is
+// selected) are toggled in onShown below.
+const MENU_ITEMS = [
+  { id: "ask-lmstudio", title: "Ask LM Studio", contexts: ["selection", "page"] },
+  { id: "ask-summarize", parentId: "ask-lmstudio", title: "Summarize", contexts: ["selection"] },
+  { id: "ask-quiz", parentId: "ask-lmstudio", title: "Quiz me", contexts: ["selection"] },
+  { id: "ask-explain", parentId: "ask-lmstudio", title: "Explain this", contexts: ["selection"] },
+  { id: "ask-proofread", parentId: "ask-lmstudio", title: "Proofread", contexts: ["selection"] },
+  { id: "ask-summarize-page", parentId: "ask-lmstudio", title: "Summarize Page", contexts: ["page"] },
+  { id: "ask-open", parentId: "ask-lmstudio", title: "Open Ask LM Studio", contexts: ["page"] },
+];
+// Page-only items: visible when the right-click had no selection.
+const PAGE_MENU_IDS = ["ask-summarize-page", "ask-open"];
+
 async function ensureMenus() {
   try {
     await browser.menus.removeAll();
   } catch (_) {}
   if (!(await shouldShowOwnMenus())) return; // native-only UX: no duplicate menu
-  const menus = browser.menus;
-  // No icons — matches the native "Ask {provider}" submenu (GenAI.sys.mjs
-  // buildAskChatMenu), which is plain text with no extension/brand icons.
-  menus.create({
-    id: "ask-lmstudio",
-    title: "Ask LM Studio",
-    contexts: ["selection", "page"],
-  });
-  // Selection context: verbatim native genai-prompts labels (genai.ftl)
-  menus.create({
-    id: "ask-summarize",
-    parentId: "ask-lmstudio",
-    title: "Summarize",
-    contexts: ["selection"],
-  });
-  menus.create({
-    id: "ask-quiz",
-    parentId: "ask-lmstudio",
-    title: "Quiz me",
-    contexts: ["selection"],
-  });
-  menus.create({
-    id: "ask-explain",
-    parentId: "ask-lmstudio",
-    title: "Explain this",
-    contexts: ["selection"],
-  });
-  menus.create({
-    id: "ask-proofread",
-    parentId: "ask-lmstudio",
-    title: "Proofread",
-    contexts: ["selection"],
-  });
-  // Page (no selection) context: native shows "Summarize Page" + "Open
-  // {provider}" instead of the selection prompts — toggled in onShown below.
-  menus.create({
-    id: "ask-summarize-page",
-    parentId: "ask-lmstudio",
-    title: "Summarize Page",
-    contexts: ["page"],
-  });
-  menus.create({
-    id: "ask-open",
-    parentId: "ask-lmstudio",
-    title: "Open Ask LM Studio",
-    contexts: ["page"],
-  });
+  for (const item of MENU_ITEMS) browser.menus.create(item);
 }
 
 // Mirror native buildAskChatMenu: selection prompts when text is selected,
@@ -76,8 +48,9 @@ if (browser.menus.onShown) {
   browser.menus.onShown.addListener(async (info) => {
     try {
       const hasSelection = !!(info.selectionText || "").trim();
-      await browser.menus.update("ask-summarize-page", { visible: !hasSelection });
-      await browser.menus.update("ask-open", { visible: !hasSelection });
+      for (const id of PAGE_MENU_IDS) {
+        await browser.menus.update(id, { visible: !hasSelection });
+      }
       await browser.menus.refresh();
     } catch (_) {}
   });

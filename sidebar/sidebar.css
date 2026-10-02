@@ -1,18 +1,11 @@
 /* Ask LM Studio sidebar — component styles.
-   Tokens (spacing, colors, radii, buttons, shadows) come from
-   firefox-tokens.css — the Firefox chrome design-system, bundled because
-   extension pages can't load chrome://global/skin/....
+   Shared theme/typography (color-scheme, message-box root font, focus rings)
+   comes from ../shared/base.css; design tokens (spacing, colors, radii,
+   buttons, shadows) from ../shared/firefox-tokens.css — the Firefox chrome
+   design-system, bundled because extension pages can't load chrome://global/....
    Layout mirrors native genai/chat.html: #header → status → #chat → #footer. */
 
 :root {
-  color-scheme: light dark;
-  /* Same root typography Firefox chrome pages use (design-system
-     text-and-typography.css): the platform message-box font, sized to the
-     design-system root size (15px). */
-  font: message-box;
-  font-size: var(--font-size-root, 15px);
-  line-height: 1.4;
-
   /* Masked glyphs (they pick up currentColor) for send/stop and the
      context-row buttons — keeps the emoji out of the chrome. */
   --send-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M8 13.2V3.6M3.8 7.8 8 3.6l4.2 4.2'/%3E%3C/svg%3E");
@@ -22,22 +15,11 @@
   --trash-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath fill='none' stroke='black' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M3.5 4.3h9M6.3 4.3V3.2c0-.4.3-.7.7-.7h2c.4 0 .7.3.7.7v1.1M5 4.5l.6 8.2c0 .6.5 1.1 1.1 1.1h2.6c.6 0 1.1-.5 1.1-1.1l.6-8.2M6.7 6.7v4.4M9.3 6.7v4.4'/%3E%3C/svg%3E");
 }
 
-* { box-sizing: border-box; }
-
 body {
   margin: 0;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background-color: var(--background-color-canvas, Canvas);
-  color: var(--text-color, CanvasText);
-}
-
-button, select, textarea { font: inherit; color: inherit; }
-
-:focus-visible {
-  outline: var(--focus-outline, 2px solid AccentColor);
-  outline-offset: var(--focus-outline-offset, 2px);
 }
 
 /* Subtle hover transitions on the interactive chrome. */

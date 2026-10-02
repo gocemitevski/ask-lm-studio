@@ -93,6 +93,7 @@ sidebar/sidebar.html|css|js
 background/background.js
 options/options.html|js|css
 shared/config.js
+shared/base.css
 shared/firefox-tokens.css
 icons/
 ```
@@ -101,8 +102,8 @@ The sidebar and options page are styled with Firefox's own design tokens:
 `shared/firefox-tokens.css`
 is the chrome design-system (`tokens-shared.css` + `tokens-brand.css`) bundled
 from Firefox 157, because extension pages can't load `chrome://global/skin/…`.
-Both pages declare `color-scheme: light dark` and use `light-dark()` tokens,
-so they follow Firefox's light/dark theme.
+Both pages load `shared/base.css`, which sets `color-scheme: light dark`,
+and use `light-dark()` tokens, so they follow Firefox's light/dark theme.
 
 License: MIT — local-first. By default no data leaves your machine; a custom Base URL sends prompts there.
 Exception: `shared/firefox-tokens.css` is bundled Mozilla code under MPL-2.0.

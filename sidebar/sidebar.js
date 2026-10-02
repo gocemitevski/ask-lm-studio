@@ -4,21 +4,7 @@
  * Depends on ../shared/config.js (LMStudioShared) loaded before this file.
  */
 
-const DEFAULTS = (typeof LMStudioShared !== "undefined" ? LMStudioShared.DEFAULTS : {
-  baseUrl: "http://localhost:1234/v1",
-  model: "",
-  systemPrompt: "You are a helpful local assistant running in LM Studio. Answer concisely.",
-  temperature: 0.85,
-  stream: true,
-  thinking: true,
-});
-const normalizeBase = (typeof LMStudioShared !== "undefined" ? LMStudioShared.normalizeBase : (u) => (u || "").trim().replace(/\/+$/, "") || DEFAULTS.baseUrl);
-const parseTemperature = (typeof LMStudioShared !== "undefined" ? LMStudioShared.parseTemperature : (v) => {
-  const n = typeof v === "number" ? v : parseFloat(v);
-  if (!Number.isFinite(n)) return 0.85;
-  return Math.min(2, Math.max(0, n));
-});
-const resolveBaseUrl = (typeof LMStudioShared !== "undefined" ? LMStudioShared.resolveBaseUrl : (u) => ({ ok: true, base: normalizeBase(u), error: "" }));
+const { DEFAULTS, parseTemperature, resolveBaseUrl } = LMStudioShared;
 
 const MAX_HISTORY_MESSAGES = 40; // last N messages kept (prevents context overflow)
 const MAX_PAGE_CHARS = 12000;
@@ -173,6 +159,18 @@ function trimHistory() {
 // kept so a transient offline blip doesn't reset the user's choice on reconnect.
 
 let fetchGeneration = 0;
+// Rebuild the model dropdown from [value, label] pairs; an empty value is a
+// placeholder option (keeps sendChat blocked because the value is falsy).
+function setModelOptions(entries, selected = "") {
+  modelSelect.innerHTML = "";
+  for (const [value, label] of entries) {
+    const o = document.createElement("option");
+    o.value = value;
+    o.textContent = label;
+    modelSelect.appendChild(o);
+  }
+  if (selected) modelSelect.value = selected;
+}
 async function fetchModels() {
   const myGeneration = ++fetchGeneration;
   modelsReady = false;
@@ -187,11 +185,7 @@ async function fetchModels() {
   const resolved = resolveBaseUrl(settings.baseUrl);
   const base = resolved.base;
   if (!resolved.ok) {
-    modelSelect.innerHTML = "";
-    const o = document.createElement("option");
-    o.textContent = "invalid URL";
-    o.value = "";
-    modelSelect.appendChild(o);
+    setModelOptions([["", "invalid URL"]]);
     setStatus("err", `✕ Invalid Base URL. ${escapeHtml(resolved.error)}`);
     finishFetch();
     return;
@@ -202,43 +196,30 @@ async function fetchModels() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const models = (data.data || []).map((m) => m.id).filter(Boolean);
-    modelSelect.innerHTML = "";
     if (models.length === 0) {
-      const o = document.createElement("option");
-      o.textContent = "No model loaded — load one in LM Studio";
-      o.value = "";
-      modelSelect.appendChild(o);
+      setModelOptions([["", "No model loaded — load one in LM Studio"]]);
       setStatus("warn", `Connected, but no model loaded in LM Studio. Load a model, then ··· → Reload LM Studio.`);
       finishFetch();
       return;
     }
-    for (const id of models) {
-      const o = document.createElement("option");
-      o.value = id;
-      o.textContent = id;
-      modelSelect.appendChild(o);
-    }
     // keep saved model if present
-    if (settings.model && models.includes(settings.model)) {
-      modelSelect.value = settings.model;
-    } else {
-      modelSelect.value = models[0];
-      if (!settings.model) {
-        // First run only: bootstrap a preference. Never overwrite a saved
-        // choice with whatever happens to be loaded right now — the user's
-        // model may simply not be loaded in LM Studio this session (see NOTE).
-        settings.model = models[0];
-        await browser.storage.local.set({ model: settings.model });
-      }
+    const keepSaved = settings.model && models.includes(settings.model);
+    setModelOptions(
+      models.map((id) => [id, id]),
+      keepSaved ? settings.model : models[0]
+    );
+    if (!keepSaved && !settings.model) {
+      // First run only: bootstrap a preference. Never overwrite a saved
+      // choice with whatever happens to be loaded right now — the user's
+      // model may simply not be loaded in LM Studio this session (see NOTE).
+      settings.model = models[0];
+      await browser.storage.local.set({ model: settings.model });
     }
     setStatus("ok", `Connected to LM Studio — <code>${escapeHtml(modelSelect.value)}</code>`);
   } catch (e) {
     console.warn("LM Studio fetchModels failed", e);
-    modelSelect.innerHTML = "";
-    const o = document.createElement("option");
-    o.textContent = "offline";
-    o.value = ""; // must stay falsy so sendChat blocks instead of sending model:"offline"
-    modelSelect.appendChild(o);
+    // value must stay falsy so sendChat blocks instead of sending model:"offline"
+    setModelOptions([["", "offline"]]);
     setStatus(
       "err",
       `✕ Can't reach LM Studio at <code>${escapeHtml(base)}</code>. Start Server on port 1234 in LM Studio → Developer. <i>${escapeHtml(e.message)}</i>`
@@ -612,28 +593,37 @@ const NATIVE_PROMPTS = {
   "ask-proofread": "Please proofread the selection for spelling and grammar errors. Identify any mistakes and provide a corrected version of the text. Maintain the meaning and factual accuracy and output the list of proposed corrections first, followed by the final, corrected version of the text.",
 };
 
-// Page-context analogs of the native prompt texts.
+// One wrapper for every instruction+content prompt (""" fences, 8k cap).
+function wrapPrompt(instruction, text) {
+  return `${instruction}\n\n"""${(text || "").slice(0, 8000)}"""`;
+}
+
+// Page-context analogs of the native prompt texts: same wording with the
+// target swapped from the selection to the page. The replacements key off
+// these exact phrases in NATIVE_PROMPTS — if genai.ftl wording changes
+// ("in this selection" / "the selection" / "this selection"), update both.
 function pagePromptFor(mode) {
-  const page = {
-    "ask-summarize": "Please summarize this page using precise and concise language. Use headers and bulleted lists in the summary, to make it scannable. Maintain the meaning and factual accuracy.",
-    "ask-explain": "Please explain the key concepts on this page, using simple words. Also, use examples.",
-    "ask-quiz": "Please quiz me on this page. Ask me a variety of types of questions, for example multiple choice, true or false, and short answer. Wait for my response before moving on to the next question.",
-    "ask-proofread": "Please proofread this page for spelling and grammar errors. Identify any mistakes and provide a corrected version of the text. Maintain the meaning and factual accuracy and output the list of proposed corrections first, followed by the final, corrected version of the text.",
-  };
-  return page[mode] || page["ask-summarize"];
+  const base = NATIVE_PROMPTS[mode] || NATIVE_PROMPTS["ask-summarize"];
+  return base
+    .replace(/in this selection/g, "on this page")
+    .replace(/the selection|this selection/g, "this page");
 }
 
 function formatPromptForMode(mode, text) {
+  if (mode in NATIVE_PROMPTS) return wrapPrompt(NATIVE_PROMPTS[mode], text);
   const sel = (text || "").slice(0, 8000);
-  if (mode in NATIVE_PROMPTS) {
-    return `${NATIVE_PROMPTS[mode]}\n\n"""${sel}"""`;
-  }
   switch (mode) {
     case "ask-lmstudio":
     default:
       if (sel) return sel; // raw selection — user already knows what they selected
       return ""; // page-only clicks handled by caller (no blind URL-only sends)
   }
+}
+
+// Attach the current page (if needed) and send a page prompt over it.
+async function sendPagePrompt(mode) {
+  if (!pageContext) await attachPage();
+  if (pageContext) await sendChat(wrapPrompt(pagePromptFor(mode), pageContext));
 }
 
 // Events
@@ -711,16 +701,10 @@ menuShortcut.addEventListener("click", async () => {
 async function runQuickPrompt(mode) {
   const typed = inputEl.value.trim();
   if (typed) {
-    const sel = typed.slice(0, 8000);
-    await sendChat(`${NATIVE_PROMPTS[mode] || `Summarize this:`}\n\n"""${sel}"""`);
+    await sendChat(formatPromptForMode(mode, typed));
     return;
   }
-  if (!pageContext) {
-    await attachPage();
-    if (!pageContext) return; // attach failed, message already shown
-  }
-  // Same native texts, applied to page instead of selection
-  await sendChat(`${pagePromptFor(mode)}\n\n"""${pageContext.slice(0, 8000)}"""`);
+  await sendPagePrompt(mode);
 }
 document.querySelectorAll("#prompts-row button").forEach((b) => {
   b.addEventListener("click", () => runQuickPrompt(b.dataset.prompt));
@@ -771,37 +755,45 @@ async function isForThisWindow(msg) {
     return true;
   }
 }
+// Shared handling for context-menu/queued prompts: either a pre-formatted
+// string or a {mode, text} payload. Used by the live onMessage listener and
+// by the pendingPrompts drain in init, so the rules live in exactly one place.
+async function dispatchAskItem(item) {
+  if (typeof item === "string") {
+    if (item.trim()) await sendChat(item.slice(0, 8000));
+    return;
+  }
+  if (item?.type !== "ask-selection") return;
+  // Back-compat: older background sent {text: <already-formatted prompt>};
+  // current background sends {mode, text: raw selection}.
+  if (!item.mode) {
+    if (item.text) await sendChat(item.text.slice(0, 8000));
+    return;
+  }
+  if (item.mode === "ask-summarize-page") {
+    // Native "Summarize Page" menu item: attach current page, then prompt.
+    await sendPagePrompt("ask-summarize");
+    return;
+  }
+  if (item.mode === "ask-lmstudio" && !(item.text || "").trim()) {
+    // Parent menu clicked on a page with no selection: don't send URL-only
+    // prompt — user likely misclicked. Guide toward Attach page instead.
+    addMsg("system", "Tip: select text first, or use Attach page to ask about the whole page.");
+    return;
+  }
+  const prompt = formatPromptForMode(item.mode, item.text);
+  if (prompt) await sendChat(prompt);
+}
+
 browser.runtime.onMessage.addListener((msg) => {
   if (msg?.type === "ask-selection") {
     void (async () => {
-      if (!(await isForThisWindow(msg))) return;
-      // Back-compat: older background sent {text: <already-formatted prompt>}
-      // New background sends {mode, text: raw selection}
-      if (msg.mode) {
-        if (msg.mode === "ask-summarize-page") {
-          // Native "Summarize Page" menu item: attach current page, then prompt.
-          if (!pageContext) await attachPage();
-          if (pageContext) await sendChat(`${pagePromptFor("ask-summarize")}\n\n"""${pageContext.slice(0, 8000)}"""`);
-          return;
-        }
-        if (msg.mode === "ask-lmstudio" && !(msg.text || "").trim()) {
-          // Parent menu clicked on a page with no selection: don't send URL-only
-          // prompt — user likely misclicked. Guide toward Attach page instead.
-          addMsg("system", "Tip: select text first, or use Attach page to ask about the whole page.");
-          return;
-        }
-        const prompt = formatPromptForMode(msg.mode, msg.text);
-        if (prompt) void sendChat(prompt);
-      } else if (msg.text) {
-        void sendChat(msg.text.slice(0, 8000));
-      }
+      if (await isForThisWindow(msg)) await dispatchAskItem(msg);
     })();
   }
   if (msg?.type === "ask-queue" && Array.isArray(msg.items)) {
-    (async () => {
-      for (const p of msg.items) {
-        if (typeof p === "string" && p.trim()) await sendChat(p.slice(0, 8000));
-      }
+    void (async () => {
+      for (const p of msg.items) await dispatchAskItem(p);
     })();
   }
   if (msg?.type === "settings-changed") {
@@ -832,20 +824,7 @@ browser.runtime.onMessage.addListener((msg) => {
       if (others.length) await browser.storage.local.set({ pendingPrompts: others });
       else await browser.storage.local.remove(["pendingPrompts", "pendingPrompt"]);
       for (const item of mine.slice(-5)) {
-        if (typeof item === "string") {
-          if (item.trim()) await sendChat(item.slice(0, 8000));
-        } else if (item?.type === "ask-selection") {
-          if (item.mode === "ask-lmstudio" && !(item.text || "").trim()) continue;
-          if (item.mode === "ask-summarize-page") {
-            if (!pageContext) await attachPage();
-            if (pageContext) await sendChat(`${pagePromptFor("ask-summarize")}\n\n"""${pageContext.slice(0, 8000)}"""`);
-            continue;
-          }
-          const prompt = item.mode
-            ? formatPromptForMode(item.mode, item.text)
-            : (item.text || "").slice(0, 8000);
-          if (prompt) await sendChat(prompt);
-        }
+        await dispatchAskItem(item);
       }
     }
   } catch (e) {

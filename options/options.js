@@ -1,18 +1,5 @@
 /* Depends on ../shared/config.js (LMStudioShared). */
-const DEFAULTS = (typeof LMStudioShared !== "undefined" ? LMStudioShared.DEFAULTS : {
-  baseUrl: "http://localhost:1234/v1",
-  model: "",
-  systemPrompt: "You are a helpful local assistant running in LM Studio. Answer concisely.",
-  temperature: 0.85,
-  stream: true,
-  thinking: true,
-});
-const parseTemperature = (typeof LMStudioShared !== "undefined" ? LMStudioShared.parseTemperature : (v) => {
-  const n = typeof v === "number" ? v : parseFloat(v);
-  if (!Number.isFinite(n)) return 0.85;
-  return Math.min(2, Math.max(0, n));
-});
-const resolveBaseUrl = (typeof LMStudioShared !== "undefined" ? LMStudioShared.resolveBaseUrl : (u) => ({ ok: true, base: (u || "").trim() || DEFAULTS.baseUrl, error: "" }));
+const { DEFAULTS, parseTemperature, resolveBaseUrl } = LMStudioShared;
 
 async function init() {
   try {
