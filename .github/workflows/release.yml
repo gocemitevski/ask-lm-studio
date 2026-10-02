@@ -1,0 +1,53 @@
+# Publishes a GitHub Release whenever a version tag (v*) is pushed:
+#   git tag v1.0.1 && git push origin main v1.0.1
+# Update the "body" below for each release before pushing its tag.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Lint (fails on errors)
+        run: npx --yes web-ext lint
+
+      - name: Build zip
+        run: npx --yes web-ext build --overwrite-destination
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Ask LM Studio ${{ github.ref_name }}
+          files: web-ext-artifacts/*.zip
+          generate_release_notes: true
+          body: |
+            Local-first AI chat in the Firefox sidebar — talks directly to LM Studio's OpenAI-compatible server.
+
+            ### Highlights
+            - **Sidebar chat**: streaming responses, model picker loaded from the server, chat history, stop/restart
+            - **Native-chatbot parity**: right-click *Summarize / Explain this / Quiz me / Proofread* with the same labels and prompt texts as Firefox's built-in AI chatbot, plus *Attach page* to ask about the current page
+            - **Thinking mode** toggle, temperature, system prompt, and Base URL in Options
+            - **Firefox-native look**: styled with Firefox 157 design tokens, follows your light/dark theme
+            - **Native dropdown membership**: `policies/lm-studio.json` adds "LM Studio (local)" to Firefox's built-in AI chatbot list via Enterprise Policy (Firefox 149+)
+            - **Privacy**: no telemetry; the manifest's data declaration covers exactly what's sent — your messages, and page text/URL only when you attach or right-click — and only to the server you configured
+
+            ### Requirements
+            - Firefox 140+ (149+ for the enterprise policy)
+            - LM Studio running a local model (default `http://localhost:1234/v1`)
+
+            ### Install
+            Download the zip, then `about:debugging → This Firefox → Load Temporary Add-on…` and pick `manifest.json` inside the zip (temporary until signed on AMO).
+
+            Full setup guide: see the README.
