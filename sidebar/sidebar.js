@@ -40,12 +40,25 @@ async function loadSettings() {
   }
 }
 
-function setStatus(state, html) {
+function setStatus(state, ...parts) {
   // Persistent status line; setup steps only surface on real errors.
   statusBar.className = "status " + state;
   // Single flex child so the message wraps across the full bar (raw text +
   // elements would become separate flex items and shrink-wrap).
-  statusBar.innerHTML = `<span>${html}</span>`; // callers must escape user-controlled parts
+  // Parts are plain strings (appended as text) or {code}/{em} objects —
+  // everything is built with DOM nodes/textContent, so no innerHTML is ever
+  // assigned a dynamic value (AMO: "Unsafe assignment to innerHTML").
+  const span = document.createElement("span");
+  for (const part of parts) {
+    if (typeof part === "string") {
+      span.appendChild(document.createTextNode(part));
+    } else {
+      const el = document.createElement(part.code !== undefined ? "code" : "i");
+      el.textContent = part.code !== undefined ? part.code : part.em;
+      span.appendChild(el);
+    }
+  }
+  statusBar.replaceChildren(span);
   statusDot.className = "dot" + (state === "ok" ? " ok" : state === "warn" ? " warn" : "");
   setupHelp.hidden = state !== "err"; // steps only on real errors, not transient checks
 }
@@ -96,7 +109,11 @@ function renderMarkdownLite(text) {
 
 function setBubbleContent(node, role, text) {
   if (role === "assistant") {
-    node.innerHTML = renderMarkdownLite(text);
+    // renderMarkdownLite HTML-escapes all model text first, so the string is
+    // safe; parse it into nodes with DOMParser instead of assigning innerHTML
+    // (AMO: "Unsafe assignment to innerHTML").
+    const parsed = new DOMParser().parseFromString(renderMarkdownLite(text), "text/html");
+    node.replaceChildren(...parsed.body.childNodes);
   } else {
     node.textContent = text;
   }
@@ -186,11 +203,11 @@ async function fetchModels() {
   const base = resolved.base;
   if (!resolved.ok) {
     setModelOptions([["", "invalid URL"]]);
-    setStatus("err", `✕ Invalid Base URL. ${escapeHtml(resolved.error)}`);
+    setStatus("err", "✕ Invalid Base URL. ", resolved.error);
     finishFetch();
     return;
   }
-  setStatus("warn", `Checking LM Studio at <code>${escapeHtml(base)}</code>…`);
+  setStatus("warn", "Checking LM Studio at ", { code: base }, "…");
   try {
     const res = await fetch(`${base}/models`, { cache: "no-store" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -215,14 +232,17 @@ async function fetchModels() {
       settings.model = models[0];
       await browser.storage.local.set({ model: settings.model });
     }
-    setStatus("ok", `Connected to LM Studio — <code>${escapeHtml(modelSelect.value)}</code>`);
+    setStatus("ok", "Connected to LM Studio — ", { code: modelSelect.value });
   } catch (e) {
     console.warn("LM Studio fetchModels failed", e);
     // value must stay falsy so sendChat blocks instead of sending model:"offline"
     setModelOptions([["", "offline"]]);
     setStatus(
       "err",
-      `✕ Can't reach LM Studio at <code>${escapeHtml(base)}</code>. Start Server on port 1234 in LM Studio → Developer. <i>${escapeHtml(e.message)}</i>`
+      "✕ Can't reach LM Studio at ",
+      { code: base },
+      ". Start Server on port 1234 in LM Studio → Developer. ",
+      { em: e.message }
     );
   } finally {
     finishFetch();
@@ -483,7 +503,7 @@ async function sendChat(userText) {
     // visibly failed with an error bubble, but a follow-up must not lose the
     // question it refers to. A manual resend simply appends a second copy.
     updateBubble(assistantNode, `Error: ${e.message}\n\nCheck:\n1. LM Studio → Developer → Server running on port 1234\n2. A model is loaded\n3. CORS enabled if needed`);
-    setStatus("err", `✕ Request failed: ${escapeHtml(e.message)}`);
+    setStatus("err", "✕ Request failed: ", e.message);
   } finally {
     // Avoid clobbering a newer generation started while we were awaiting.
     if (isMine()) setStreaming(false);
@@ -714,7 +734,7 @@ modelSelect.addEventListener("change", async () => {
   await browser.storage.local.set({ model: modelSelect.value });
   settings.model = modelSelect.value;
   if (modelSelect.value) {
-    setStatus("ok", `Connected — <code>${escapeHtml(modelSelect.value)}</code>`);
+    setStatus("ok", "Connected — ", { code: modelSelect.value });
   }
 });
 
