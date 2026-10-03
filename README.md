@@ -26,7 +26,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 ### Temporary (dev)
 1. `about:debugging → This Firefox → Load Temporary Add-on → manifest.json`
 2. Open sidebar launcher (View → Sidebar) → **Ask LM Studio**. Or click toolbar button.
-3. Status bar shows `✓ Connected` (if not, ··· → Reload LM Studio).
+3. Status bar shows `Connected to LM Studio — <model>` (if not, ··· → Reload LM Studio).
 
 ### Permanent
 - `web-ext build` → upload `.zip` to `about:addons` or sign via AMO, or use ESR policies.
@@ -80,7 +80,8 @@ talks straight to `localhost:1234` from its own sidebar entry.
 
 ## Troubleshooting
 
-- **Can't reach LM Studio**: Server not started? Wrong port? Check options Base URL ends with `/v1`.
+- **Invalid Base URL**: must start with `http://` or `https://` (e.g. `http://localhost:1234/v1`).
+- **Can't reach LM Studio**: server not started? wrong port? Base URL ending in `/v1`? The sidebar shows a numbered checklist below the status bar.
 - **CORS / empty response**: In LM Studio Server settings enable CORS, restart server.
 - **No model**: Load model in LM Studio first, then ··· → Reload LM Studio.
 - **Sidebar not showing**: Firefox 140+ required (the built-in data-collection consent the manifest uses needs it). View → Sidebar → Ask LM Studio. `browser.ml.chat` prefs are for native chatbot only, not needed for this extension.
