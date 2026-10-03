@@ -396,7 +396,7 @@ body {
    dropped — the empty-chat "Summarize" chip covers the same action. ---- */
 #footer {
   border-top: 1px solid var(--border-color);
-  padding: var(--space-small) var(--space-medium) var(--space-medium);
+  padding: var(--space-medium);
   display: flex;
   flex-direction: column;
 }
