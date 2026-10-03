@@ -203,7 +203,7 @@ async function fetchModels() {
   const base = resolved.base;
   if (!resolved.ok) {
     setModelOptions([["", "invalid URL"]]);
-    setStatus("err", "✕ Invalid Base URL. ", resolved.error);
+    setStatus("err", "Invalid Base URL. ", resolved.error);
     finishFetch();
     return;
   }
@@ -239,7 +239,7 @@ async function fetchModels() {
     setModelOptions([["", "offline"]]);
     setStatus(
       "err",
-      "✕ Can't reach LM Studio at ",
+      "Can't reach LM Studio at ",
       { code: base },
       ". Start Server on port 1234 in LM Studio → Developer. ",
       { em: e.message }
@@ -503,7 +503,7 @@ async function sendChat(userText) {
     // visibly failed with an error bubble, but a follow-up must not lose the
     // question it refers to. A manual resend simply appends a second copy.
     updateBubble(assistantNode, `Error: ${e.message}\n\nCheck:\n1. LM Studio → Developer → Server running on port 1234\n2. A model is loaded\n3. CORS enabled if needed`);
-    setStatus("err", "✕ Request failed: ", e.message);
+    setStatus("err", "Request failed: ", e.message);
   } finally {
     // Avoid clobbering a newer generation started while we were awaiting.
     if (isMine()) setStreaming(false);
