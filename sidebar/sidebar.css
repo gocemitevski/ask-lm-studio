@@ -188,14 +188,14 @@ body {
   padding: var(--space-medium);
   display: flex;
   flex-direction: column;
-  gap: var(--space-medium);
+  gap: var(--space-large);
   min-height: 0;
   scrollbar-color: var(--border-color-deemphasized) transparent;
   scrollbar-width: thin;
 }
 .msg {
   border-radius: var(--border-radius-large);
-  padding: var(--space-medium);
+  padding: var(--space-large);
   word-wrap: break-word;
 }
 .msg.user {
