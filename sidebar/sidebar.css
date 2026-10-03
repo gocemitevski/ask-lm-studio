@@ -297,7 +297,7 @@ body {
   display: flex;
   gap: var(--space-small);
   /* Sits under the composer, above the footer divider — a bit more room below. */
-  padding: var(--space-xsmall) var(--space-medium) var(--space-small);
+  padding: var(--space-xsmall) var(--space-medium) var(--space-large);
   align-items: center;
 }
 .context-row button {
