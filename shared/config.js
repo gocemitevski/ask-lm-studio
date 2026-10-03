@@ -30,7 +30,7 @@ var LMStudioShared = (() => {
     const raw = (input || "").trim().replace(/\/+$/, "");
     const base = raw || DEFAULTS.baseUrl;
     if (!isValidHttpUrl(base)) {
-      return { ok: false, base: DEFAULTS.baseUrl, error: "Base URL must start with http:// or https:// (e.g. http://localhost:1234/v1)" };
+      return { ok: false, base: DEFAULTS.baseUrl, error: "Must start with http:// or https:// (e.g. http://localhost:1234/v1)" };
     }
     return { ok: true, base, error: "" };
   }

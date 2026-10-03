@@ -13,7 +13,7 @@ async function init() {
     document.getElementById("thinking").checked = !!s.thinking;
     document.getElementById("showOwnMenu").checked = s.showOwnMenu !== false;
   } catch (e) {
-    document.getElementById("status").textContent = `Could not load settings: ${e.message}`;
+    document.getElementById("status").textContent = `Couldn't load settings: ${e.message}`;
   }
   try {
     document.getElementById("extUrl").value = browser.runtime.getURL("sidebar/sidebar.html");
@@ -66,7 +66,12 @@ document.getElementById("test").addEventListener("click", async () => {
     const n = (j.data || []).length;
     st.textContent = `OK — found ${n} model(s): ${(j.data || []).map(m=>m.id).join(", ") || "none loaded"}`;
   } catch (e) {
-    st.textContent = `Failed: ${e.message} — Is LM Studio Server running with CORS enabled?`;
+    // Firefox reports fetch failures as "NetworkError when attempting to
+    // fetch resource." — show the likely cause instead of the raw string.
+    const unreachable = e.name === "TypeError" || /^NetworkError\b/.test(e.message);
+    st.textContent = unreachable
+      ? "Can't reach LM Studio — is the server running on port 1234 with CORS enabled?"
+      : `Failed: ${e.message}`;
   }
 });
 

@@ -45,13 +45,18 @@ function setStatus(state, ...parts) {
   statusBar.className = "status " + state;
   // Single flex child so the message wraps across the full bar (raw text +
   // elements would become separate flex items and shrink-wrap).
-  // Parts are plain strings (appended as text) or {code}/{em} objects —
-  // everything is built with DOM nodes/textContent, so no innerHTML is ever
-  // assigned a dynamic value (AMO: "Unsafe assignment to innerHTML").
+  // Parts are plain strings (appended as text), {code}/{em} render targets,
+  // or {help: false} to suppress the troubleshooting steps (they don't apply
+  // to every error — e.g. a malformed Base URL isn't fixed by starting the
+  // server). Everything is built with DOM nodes/textContent, so no innerHTML
+  // is ever assigned a dynamic value (AMO: "Unsafe assignment to innerHTML").
   const span = document.createElement("span");
+  let showHelp = true;
   for (const part of parts) {
     if (typeof part === "string") {
       span.appendChild(document.createTextNode(part));
+    } else if (part.help !== undefined) {
+      showHelp = part.help;
     } else {
       const el = document.createElement(part.code !== undefined ? "code" : "i");
       el.textContent = part.code !== undefined ? part.code : part.em;
@@ -60,7 +65,7 @@ function setStatus(state, ...parts) {
   }
   statusBar.replaceChildren(span);
   statusDot.className = "dot" + (state === "ok" ? " ok" : state === "warn" ? " warn" : "");
-  setupHelp.hidden = state !== "err"; // steps only on real errors, not transient checks
+  setupHelp.hidden = state !== "err" || !showHelp; // steps only on real errors
 }
 
 function renderMarkdownText(escText) {
@@ -203,7 +208,7 @@ async function fetchModels() {
   const base = resolved.base;
   if (!resolved.ok) {
     setModelOptions([["", "invalid URL"]]);
-    setStatus("err", "Invalid Base URL. ", resolved.error);
+    setStatus("err", "Invalid Base URL — ", resolved.error, { help: false });
     finishFetch();
     return;
   }
@@ -215,7 +220,7 @@ async function fetchModels() {
     const models = (data.data || []).map((m) => m.id).filter(Boolean);
     if (models.length === 0) {
       setModelOptions([["", "No model loaded — load one in LM Studio"]]);
-      setStatus("warn", `Connected, but no model loaded in LM Studio. Load a model, then ··· → Reload LM Studio.`);
+      setStatus("warn", "Connected, but no model is loaded — load one, then ··· → Reload LM Studio.");
       finishFetch();
       return;
     }
@@ -237,13 +242,7 @@ async function fetchModels() {
     console.warn("LM Studio fetchModels failed", e);
     // value must stay falsy so sendChat blocks instead of sending model:"offline"
     setModelOptions([["", "offline"]]);
-    setStatus(
-      "err",
-      "Can't reach LM Studio at ",
-      { code: base },
-      ". Start Server on port 1234 in LM Studio → Developer. ",
-      { em: e.message }
-    );
+    setStatus("err", "Can't reach LM Studio at ", { code: base }, " — see the steps below.");
   } finally {
     finishFetch();
   }
@@ -307,7 +306,7 @@ async function sendChat(userText) {
   }
   const resolved = resolveBaseUrl(settings.baseUrl);
   if (!resolved.ok) {
-    addMsg("system", `Invalid Base URL: ${resolved.error}`);
+    addMsg("system", `Invalid Base URL — ${resolved.error}`);
     return;
   }
   const base = resolved.base;
@@ -319,8 +318,8 @@ async function sendChat(userText) {
     addMsg(
       "system",
       label === "offline"
-        ? "Can't reach LM Studio right now — start the server, then ··· → Reload LM Studio and resend."
-        : "No model selected. Load a model in LM Studio, then ··· → Reload LM Studio."
+        ? "Can't reach LM Studio — start the server, then ··· → Reload LM Studio and resend."
+        : "No model selected — load one in LM Studio, then ··· → Reload LM Studio."
     );
     return;
   }
@@ -502,8 +501,19 @@ async function sendChat(userText) {
     // Keep the user's message in context (same as the stop path): the turn
     // visibly failed with an error bubble, but a follow-up must not lose the
     // question it refers to. A manual resend simply appends a second copy.
-    updateBubble(assistantNode, `Error: ${e.message}\n\nCheck:\n1. LM Studio → Developer → Server running on port 1234\n2. A model is loaded\n3. CORS enabled if needed`);
-    setStatus("err", "Request failed: ", e.message);
+    // Firefox reports fetch failures as "NetworkError when attempting to
+    // fetch resource." — too cryptic to show; HTTP / LM Studio errors are
+    // already meaningful and worth showing verbatim. The troubleshooting
+    // steps come from setStatus (visible above the chat).
+    const unreachable = e.name === "TypeError" || /^NetworkError\b/.test(e.message);
+    updateBubble(
+      assistantNode,
+      unreachable ? "Couldn't reach LM Studio — see the steps above." : `Error: ${e.message}`
+    );
+    setStatus(
+      "err",
+      unreachable ? "Couldn't reach LM Studio — see the steps below." : "Request failed — see the steps below."
+    );
   } finally {
     // Avoid clobbering a newer generation started while we were awaiting.
     if (isMine()) setStreaming(false);
@@ -586,7 +596,7 @@ async function attachPage() {
     setAttachedUI(true, r.title, Math.round(r.text.length / 1024));
     addMsg("system", `Attached page: ${r.title}\nYou can now ask to summarize, explain, quiz, proofread, etc.`);
   } catch (e) {
-    addMsg("system", `Could not attach page: ${e.message}.`);
+    addMsg("system", `Couldn't attach page: ${e.message}`);
   }
 }
 
