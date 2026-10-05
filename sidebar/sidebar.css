@@ -224,6 +224,16 @@ body {
 .msg .body p:last-child { margin-bottom: 0; }
 .msg .body ul,
 .msg .body ol { margin: var(--space-small) 0; padding-inline-start: var(--space-large); }
+.msg .body hr {
+  border: none;
+  border-block-start: var(--border-width) solid color-mix(in srgb, currentColor 30%, transparent);
+  margin: var(--space-small) 0;
+}
+.msg .body blockquote {
+  border-inline-start: 3px solid color-mix(in srgb, var(--color-accent-primary) 50%, transparent);
+  margin: var(--space-medium) 0;
+  padding-inline-start: var(--space-medium);
+}
 .msg .body a { color: var(--color-accent-primary); }
 .msg .body pre {
   background: color-mix(in srgb, currentColor 7%, transparent);
