@@ -19,6 +19,9 @@
     "https://*/*",
     "http://*/*"
   ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; base-uri 'self'; form-action 'self'; style-src 'self'; img-src 'self' data:; connect-src http: https:; frame-src 'none'"
+  },
   "sidebar_action": {
     "default_panel": "sidebar/sidebar.html",
     "default_title": "Ask LM Studio",
