@@ -50,9 +50,6 @@
       "data_collection_permissions": {
         "required": ["personalCommunications", "browsingActivity", "websiteContent"]
       }
-    },
-    "gecko_android": {
-      "strict_min_version": "142.0"
     }
   }
 }
