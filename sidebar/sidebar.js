@@ -527,7 +527,9 @@ async function sendChat(userText) {
           updateBubble(assistantNode, acc);
         }
       } catch (_) {
-        console.debug("Ignoring non-JSON SSE payload", payload.slice(0, 120));
+        // Log only the length — payload content may be model/server data
+        // and shouldn't end up in shared screenshots or copied console logs.
+        console.debug(`Ignoring non-JSON SSE payload (${payload.length} chars)`);
       }
     };
 
