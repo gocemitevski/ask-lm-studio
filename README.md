@@ -24,11 +24,13 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 ## 2. Install extension in Firefox
 
 ### Temporary (dev)
+
 1. `about:debugging → This Firefox → Load Temporary Add-on → manifest.json`
 2. Open sidebar launcher (View → Sidebar) → **Ask LM Studio**. Or click toolbar button.
 3. Status bar shows `Connected to LM Studio — <model>` (if not, ··· → Reload LM Studio).
 
 ### Permanent
+
 - `web-ext build` → upload `.zip` to `about:addons` or sign via AMO, or use ESR policies.
 
 ## 3. Use it
@@ -66,7 +68,7 @@ This repo now ships the official workaround:
 Important: the native chatbot just iframes a **web-chat URL**, not the raw
 LM Studio API. Since `:1234` is API-only:
 
-```
+```bash
 docker run -p 3000:8080 ghcr.io/open-webui/open-webui:main
 # Open WebUI → Settings → Connections → OpenAI → http://host.docker.internal:1234/v1
 ```
@@ -88,7 +90,7 @@ talks straight to `localhost:1234` from its own sidebar entry.
 
 ## Files
 
-```
+```txt
 manifest.json
 sidebar/sidebar.html|css|js
 background/background.js
@@ -111,7 +113,7 @@ and use `light-dark()` tokens, so they follow Firefox's light/dark theme.
 Ask LM Studio has **no telemetry, analytics, accounts, or third-party services**. The manifest's `data_collection_permissions` declares exactly what can leave the browser:
 
 | Data | When | Where it goes |
-|---|---|---|
+| --- | --- | --- |
 | Chat messages you type | Every message you send | Only the Base URL configured in Options — default `http://localhost:1234`, a program on your own machine |
 | Attached page text (first ~12,000 chars) or selected text (first ~8,000 chars) | Only when you click Attach page or a right-click prompt | Same configured server |
 | The page's URL | Only with attached page text (Attach page or “Summarize Page”) — never with selection-only prompts | Same configured server |
