@@ -114,7 +114,7 @@ Ask LM Studio has **no telemetry, analytics, accounts, or third-party services**
 |---|---|---|
 | Chat messages you type | Every message you send | Only the Base URL configured in Options — default `http://localhost:1234`, a program on your own machine |
 | Attached page text (first ~12,000 chars) or selected text (first ~8,000 chars) | Only when you click Attach page or a right-click prompt | Same configured server |
-| The page's URL | Same as above | Same configured server |
+| The page's URL | Only with attached page text (Attach page or “Summarize Page”) — never with selection-only prompts | Same configured server |
 
 - **Why:** solely to generate the model's reply — the extension's whole purpose. Nothing else (browsing history, identifiers, device info, usage statistics) is ever sent anywhere.
 - **Storage:** settings and chat history stay in the browser; the queued right-click prompt uses in-memory (`storage.session`) data that Firefox clears on exit, so nothing from private windows is retained across sessions. Whatever your configured server keeps is under your control.

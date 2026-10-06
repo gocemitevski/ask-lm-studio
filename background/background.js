@@ -124,7 +124,6 @@ const menuListener = async (info, tab) => {
     type: "ask-selection",
     mode: info.menuItemId || "ask-lmstudio",
     text: selection,
-    pageUrl: tab?.url || "",
     windowId: typeof tab?.windowId === "number" ? tab.windowId : null,
   };
 

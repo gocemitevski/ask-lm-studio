@@ -727,14 +727,16 @@ function wrapPrompt(instruction, text, tag = "selection") {
 // these exact phrases in NATIVE_PROMPTS — if genai.ftl wording changes
 // ("in this selection" / "the selection" / "this selection"), update both.
 function pagePromptFor(mode) {
-  const base = NATIVE_PROMPTS[mode] || NATIVE_PROMPTS["ask-summarize"];
+  const base = Object.hasOwn(NATIVE_PROMPTS, mode)
+    ? NATIVE_PROMPTS[mode]
+    : NATIVE_PROMPTS["ask-summarize"];
   return base
     .replace(/in this selection/g, "on this page")
     .replace(/the selection|this selection/g, "this page");
 }
 
 function formatPromptForMode(mode, text) {
-  if (mode in NATIVE_PROMPTS) return wrapPrompt(NATIVE_PROMPTS[mode], text);
+  if (Object.hasOwn(NATIVE_PROMPTS, mode)) return wrapPrompt(NATIVE_PROMPTS[mode], text);
   const sel = (text || "").slice(0, 8000);
   switch (mode) {
     case "ask-lmstudio":
@@ -913,11 +915,6 @@ browser.runtime.onMessage.addListener((msg) => {
   if (msg?.type === "ask-selection") {
     void (async () => {
       if (await isForThisWindow(msg)) await dispatchAskItem(msg);
-    })();
-  }
-  if (msg?.type === "ask-queue" && Array.isArray(msg.items)) {
-    void (async () => {
-      for (const p of msg.items) await dispatchAskItem(p);
     })();
   }
   if (msg?.type === "settings-changed") {
