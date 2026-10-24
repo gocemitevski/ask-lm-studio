@@ -9,6 +9,11 @@
 <h3>LM Studio connection</h3>
 <label>Base URL (OpenAI-compatible)</label>
 <input id="baseUrl" placeholder="http://localhost:1234/v1" />
+<label title="Only needed if you enabled “Require Authentication” in LM Studio (Developer → Server Settings). Create the token there via Manage Tokens, then paste it here. Leave empty otherwise — by default LM Studio needs no token. Stored in this browser only, sent only to the Base URL above.">API token (if LM Studio requires authentication)</label>
+<input id="apiToken" type="password" autocomplete="off" spellcheck="false" placeholder="Leave empty unless authentication is enabled" />
+<div class="row">
+<label title="Temporarily unmask the token to check it while pasting."><input id="showToken" type="checkbox"> Show token</label>
+</div>
 <label>Preferred model (optional — auto-detected)</label>
 <input id="model" placeholder="e.g. llama-3.2-3b-instruct" />
 <label>System prompt</label>

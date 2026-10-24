@@ -2,6 +2,9 @@
 var LMStudioShared = (() => {
   const DEFAULTS = {
     baseUrl: "http://localhost:1234/v1",
+    // LM Studio API token ("Require Authentication" in the server settings).
+    // Empty = no auth header sent — the default LM Studio setup needs none.
+    apiToken: "",
     model: "",
     systemPrompt: "You are a helpful local assistant running in LM Studio. Answer concisely.",
     temperature: 0.85,
@@ -35,5 +38,13 @@ var LMStudioShared = (() => {
     return { ok: true, base, error: "" };
   }
 
-  return { DEFAULTS, normalizeBase, parseTemperature, isValidHttpUrl, resolveBaseUrl };
+  // LM Studio's optional "Require Authentication" (Developer → Server
+  // Settings) expects an API token on every request. Empty token → no
+  // header at all, keeping the common no-auth setup byte-identical.
+  function authHeaders(apiToken) {
+    const t = (apiToken || "").trim();
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  }
+
+  return { DEFAULTS, normalizeBase, parseTemperature, isValidHttpUrl, resolveBaseUrl, authHeaders };
 })();

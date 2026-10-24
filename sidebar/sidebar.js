@@ -4,7 +4,7 @@
  * Depends on ../shared/config.js (LMStudioShared) loaded before this file.
  */
 
-const { DEFAULTS, parseTemperature, resolveBaseUrl } = LMStudioShared;
+const { DEFAULTS, parseTemperature, resolveBaseUrl, authHeaders } = LMStudioShared;
 
 const MAX_HISTORY_MESSAGES = 40; // last N messages kept (prevents context overflow)
 const MAX_PAGE_CHARS = 12000;
@@ -315,7 +315,17 @@ async function fetchModels() {
   }
   setStatus("warn", "Checking LM Studio at ", { code: base }, "…");
   try {
-    const res = await fetch(`${base}/models`, { cache: "no-store" });
+    const res = await fetch(`${base}/models`, { cache: "no-store", headers: authHeaders(settings.apiToken) });
+    // 401 = the server is up and answered, but "Require Authentication" is
+    // on (or the token is wrong) — never report that as unreachable.
+    if (res.status === 401) {
+      // The "auth required" label is how sendChat tells this state apart
+      // from "offline" — same pattern the offline/no-model states use.
+      setModelOptions([["", "auth required"]]);
+      setStatus("err", "LM Studio asked for authentication (HTTP 401) — check the API token in Options, or turn off “Require Authentication” in LM Studio.", { help: false });
+      finishFetch();
+      return;
+    }
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     const models = (data.data || []).map((m) => m.id).filter(Boolean);
@@ -374,19 +384,22 @@ async function flushQueuedPrompts() {
   for (const p of items) {
     if (!p) continue;
     // Sendable check mirrors sendChat's guards — calling it while offline /
-    // no-model would only emit a misleading system message and drop the text.
+    // no-model / auth-required would only emit a misleading system message
+    // and drop the text.
     if (resolveBaseUrl(settings.baseUrl).ok && modelSelect.value) await sendChat(p);
     else unsent.push(p);
   }
   if (unsent.length) {
-    // Still can't send (offline / no model): give the text back instead of
-    // losing it — it was never shown as a message bubble.
+    // Still can't send (offline / no model / auth required): give the text
+    // back instead of losing it — it was never shown as a message bubble.
+    // No reason in the message: the status bar above always shows the
+    // precise one for the current state.
     const restored = unsent.join("\n");
     inputEl.value = inputEl.value ? `${inputEl.value}\n${restored}` : restored;
     addMsg(
       "system",
       unsent.length === 1
-        ? "Couldn't auto-send while LM Studio is unavailable — your message was restored to the input box."
+        ? "Couldn't auto-send — your message was restored to the input box."
         : `Couldn't auto-send ${unsent.length} queued messages — restored to the input box.`
     );
   }
@@ -424,9 +437,11 @@ async function sendChat(userText) {
     const label = modelSelect.selectedOptions[0]?.textContent || "";
     addMsg(
       "system",
-      label === "offline"
-        ? "Can't reach LM Studio — start the server, then ··· → Reload LM Studio and resend."
-        : "No model selected — load one in LM Studio, then ··· → Reload LM Studio."
+      label === "auth required"
+        ? "LM Studio asked for authentication — check the API token in Options, or turn off “Require Authentication” in LM Studio, then ··· → Reload LM Studio."
+        : label === "offline"
+          ? "Can't reach LM Studio — start the server, then ··· → Reload LM Studio and resend."
+          : "No model selected — load one in LM Studio, then ··· → Reload LM Studio."
     );
     return;
   }
@@ -488,10 +503,18 @@ async function sendChat(userText) {
   try {
     const res = await fetch(`${base}/chat/completions`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...authHeaders(settings.apiToken) },
       body: JSON.stringify(body),
       signal: aborter.signal,
     });
+    if (res.status === 401) {
+      // Auth required but no/wrong token — actionable, not a network failure.
+      // Marked so the catch below can skip the server/CORS troubleshooting
+      // steps (they don't apply to an auth problem).
+      const err = new Error("LM Studio asked for authentication (HTTP 401) — check the API token in Options, or turn off “Require Authentication” in LM Studio.");
+      err.authRequired = true;
+      throw err;
+    }
     if (!res.ok) {
       const t = await res.text().catch(() => "");
       throw new Error(`HTTP ${res.status} ${t.slice(0, 300)}`);
@@ -624,7 +647,13 @@ async function sendChat(userText) {
     );
     setStatus(
       "err",
-      unreachable ? "Couldn't reach LM Studio — see the steps below." : "Request failed — see the steps below."
+      e.authRequired
+        ? e.message
+        : unreachable
+          ? "Couldn't reach LM Studio — see the steps below."
+          : "Request failed — see the steps below.",
+      // The server/CORS checklist doesn't help with an auth problem.
+      { help: !e.authRequired }
     );
   } finally {
     // Avoid clobbering a newer generation started while we were awaiting.

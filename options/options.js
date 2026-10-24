@@ -1,11 +1,12 @@
 /* Depends on ../shared/config.js (LMStudioShared). */
-const { DEFAULTS, parseTemperature, resolveBaseUrl } = LMStudioShared;
+const { DEFAULTS, parseTemperature, resolveBaseUrl, authHeaders } = LMStudioShared;
 
 async function init() {
   try {
     const keys = [...Object.keys(DEFAULTS), "showOwnMenu"];
     const s = { ...DEFAULTS, showOwnMenu: true, ...(await browser.storage.local.get(keys)) };
     document.getElementById("baseUrl").value = s.baseUrl;
+    document.getElementById("apiToken").value = s.apiToken || "";
     document.getElementById("model").value = s.model || "";
     document.getElementById("systemPrompt").value = s.systemPrompt;
     document.getElementById("temperature").value = s.temperature;
@@ -29,6 +30,10 @@ document.getElementById("copyExtUrl")?.addEventListener("click", async () => {
   }
 });
 
+document.getElementById("showToken").addEventListener("change", (e) => {
+  document.getElementById("apiToken").type = e.target.checked ? "text" : "password";
+});
+
 document.getElementById("save").addEventListener("click", async () => {
   const resolved = resolveBaseUrl(document.getElementById("baseUrl").value);
   const st = document.getElementById("status");
@@ -38,6 +43,7 @@ document.getElementById("save").addEventListener("click", async () => {
   }
   const data = {
     baseUrl: resolved.base,
+    apiToken: document.getElementById("apiToken").value.trim(),
     model: document.getElementById("model").value.trim(),
     systemPrompt: document.getElementById("systemPrompt").value,
     temperature: parseTemperature(document.getElementById("temperature").value),
@@ -58,9 +64,18 @@ document.getElementById("test").addEventListener("click", async () => {
     return;
   }
   const base = resolved.base;
+  // Test the token as typed (not only the saved one), so a freshly pasted
+  // token can be verified before saving.
+  const token = document.getElementById("apiToken").value.trim();
   st.textContent = "Testing…";
   try {
-    const r = await fetch(`${base}/models`);
+    const r = await fetch(`${base}/models`, { headers: authHeaders(token) });
+    // 401 = reachable and understood, but auth is required/wrong — never
+    // report that as "can't reach".
+    if (r.status === 401) {
+      st.textContent = "Server asked for authentication (HTTP 401) — check the API token above, or turn off “Require Authentication” in LM Studio.";
+      return;
+    }
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await r.json();
     const n = (j.data || []).length;
