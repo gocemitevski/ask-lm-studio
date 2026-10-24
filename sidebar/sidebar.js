@@ -101,21 +101,39 @@ function renderMarkdownText(escText, math = true) {
     .replace(new RegExp(marker + "(\\d+)" + marker, "g"), (_, n) => `<code>${codes[+n]}</code>`);
   const lines = inline.split("\n");
   let html = "";
-  let inList = false;
+  let listTag = ""; // open list element: "", "ul", or "ol"
   let inQuote = false;
+  // Every list close goes through here, so switching list types (ul → ol)
+  // and the quote / hr / end-of-text boundaries can't leave a mismatched tag.
+  const closeList = () => {
+    if (listTag) { html += `</${listTag}>`; listTag = ""; }
+  };
   const emitLine = (line) => {
     // Thematic break: a line of only --- / *** / ___ (3 or more). Checked
-    // before the list rule, which shares the "-" / "*" starters.
+    // before the list rules, which share the "-" / "*" starters.
     if (/^\s*([-*_])\1{2,}\s*$/.test(line)) {
-      if (inList) { html += "</ul>"; inList = false; }
+      closeList();
       html += "<hr>";
       return;
     }
+    const ordered = line.match(/^\s*(\d+)[.)] (.*)$/);
     if (/^\s*[-*] /.test(line)) {
-      if (!inList) { html += "<ul>"; inList = true; }
+      if (listTag !== "ul") { closeList(); html += "<ul>"; listTag = "ul"; }
       html += `<li>${line.replace(/^\s*[-*] /, "")}</li>`;
+    } else if (ordered) {
+      // Ordered item ("1. x" / "2) x"). The marker is dropped from the
+      // content — the <ol> supplies the numbering — so a source line that
+      // starts with e.g. "2026." also lands here, same as CommonMark. The
+      // start attribute resumes the sequence when an interleaved bullet or
+      // paragraph line interrupted the list ("3." must not come back as "1.").
+      if (listTag !== "ol") {
+        closeList();
+        html += ordered[1] === "1" ? "<ol>" : `<ol start="${ordered[1]}">`;
+        listTag = "ol";
+      }
+      html += `<li>${ordered[2]}</li>`;
     } else {
-      if (inList) { html += "</ul>"; inList = false; }
+      closeList();
       if (line.trim() !== "") html += `<p>${line}</p>`;
     }
   };
@@ -128,7 +146,7 @@ function renderMarkdownText(escText, math = true) {
       // leaves a stray gap.
       if (!inQuote && quoted[1].trim() === "") continue;
       if (!inQuote) {
-        if (inList) { html += "</ul>"; inList = false; }
+        closeList();
         html += "<blockquote>";
         inQuote = true;
       }
@@ -137,14 +155,14 @@ function renderMarkdownText(escText, math = true) {
       // A blank line only separates paragraphs inside an open quote
       // (CommonMark continuation) — only real content ends it.
       if (inQuote && line.trim() !== "") {
-        if (inList) { html += "</ul>"; inList = false; }
+        closeList();
         html += "</blockquote>";
         inQuote = false;
       }
       emitLine(line);
     }
   }
-  if (inList) html += "</ul>";
+  closeList();
   if (inQuote) html += "</blockquote>";
   return html;
 }
