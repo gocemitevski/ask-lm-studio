@@ -40,7 +40,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 ## 3. Use it
 
 - Select model from dropdown, type, Enter to send.
-- **Quick prompts** — Summarize / Explain this / Quiz me / Proofread, same labels and prompt texts as the built-in chatbot (Summarize uses typed composer text first, otherwise the attached page).
+- **Quick prompts** — Summarize / Explain this / Quiz me / Proofread (same labels and prompt texts as the built-in chatbot) plus Fact Check / Research; typed composer text is used first, otherwise the attached page.
 - **Attach page** (footer) → asks about current tab.
 - ··· menu: Reload LM Studio, New chat, Show shortcut when selecting text, Settings…
 - Select text on any page → right-click → Ask LM Studio (Summarize / Quiz me / Explain this / Proofread / Fact Check / Research).

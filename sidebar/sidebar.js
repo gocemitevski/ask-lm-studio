@@ -816,15 +816,25 @@ function wrapPrompt(instruction, text, tag = "selection") {
   return `${instruction}\n\n<${tag}>\n${quoteLines((text || "").slice(0, 8000))}\n</${tag}>`;
 }
 
-// Page-context analogs of the native prompt texts: same wording with the
-// target swapped from the selection to the page. The replacements key off
+// Page-context analogs of the prompt texts: same wording with the target
+// swapped from the selection to the page. The native replacements key off
 // these exact phrases in NATIVE_PROMPTS — if genai.ftl wording changes
 // ("in this selection" / "the selection" / "this selection"), update both.
+// The extension prompts are our own text, so their swaps are listed here
+// directly. Returns "" for an unknown mode — the caller must then send
+// nothing, never page content with a mismatched (or missing) instruction.
 function pagePromptFor(mode) {
-  const base = Object.hasOwn(NATIVE_PROMPTS, mode)
-    ? NATIVE_PROMPTS[mode]
-    : NATIVE_PROMPTS["ask-summarize"];
-  return base
+  if (mode === "ask-factcheck") {
+    return FACT_CHECK_PROMPT.replace(/the selection below/g, "the page below")
+      .replace(/in the selection/g, "in the page")
+      .replace(/the selection's/g, "the page's");
+  }
+  if (mode === "ask-research") {
+    return RESEARCH_PROMPT.replace(/the selected term below/g, "the main subject of the page below")
+      .replace(/the term/g, "the subject");
+  }
+  if (!Object.hasOwn(NATIVE_PROMPTS, mode)) return "";
+  return NATIVE_PROMPTS[mode]
     .replace(/in this selection/g, "on this page")
     .replace(/the selection|this selection/g, "this page");
 }
@@ -846,8 +856,10 @@ function formatPromptForMode(mode, text) {
 
 // Attach the current page (if needed) and send a page prompt over it.
 async function sendPagePrompt(mode) {
+  const prompt = pagePromptFor(mode);
+  if (!prompt) return; // unknown mode: no instruction to attach the page to
   if (!pageContext) await attachPage();
-  if (pageContext) await sendChat(wrapPrompt(pagePromptFor(mode), pageContext, "page"));
+  if (pageContext) await sendChat(wrapPrompt(prompt, pageContext, "page"));
 }
 
 // Events
@@ -920,8 +932,9 @@ menuShortcut.addEventListener("click", async () => {
   await refreshShortcutCheckbox();
 });
 
-// Native-style quick prompts: same 4 labels as built-ins.
-// Operate on composer text if present, else attached page, else attach current page first.
+// Quick prompts: the 4 built-in labels plus Fact Check / Research (the
+// extension's own prompts). Operate on composer text if present, else
+// attached page, else attach current page first.
 async function runQuickPrompt(mode) {
   const typed = inputEl.value.trim();
   if (typed) {
