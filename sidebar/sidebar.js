@@ -989,7 +989,7 @@ async function dispatchAskItem(item) {
     if (!item.imageSrc) {
       // Hand-queued/hand-built payload without a URL: guide instead of
       // sending the model a prompt about nothing.
-      addMsg("system", "Tip: right-click directly on an image → Ask LM Studio → Image Source.");
+      addMsg("system", "Tip: right-click directly on an image → Ask LM Studio → Find Image Source.");
       return;
     }
     await sendChat(wrapPrompt(IMAGE_SOURCE_PROMPT, imageSourceDigest(item)));

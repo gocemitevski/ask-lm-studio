@@ -16,7 +16,7 @@ async function shouldShowOwnMenus() {
 // (GenAI.sys.mjs buildAskChatMenu), which is plain text with no
 // extension/brand icons. Selection items use verbatim native genai-prompts
 // labels (genai.ftl); "Fact Check" and "Research" (selection) and
-// "Image Source" (image) are extension-only entries (no native equivalent).
+// "Find Image Source" (image) are extension-only entries (no native equivalent).
 // The two page items (native shows "Summarize Page" + "Open {provider}"
 // instead of the selection prompts when nothing is selected) are toggled in
 // onShown below.
@@ -28,7 +28,7 @@ const MENU_ITEMS = [
   { id: "ask-proofread", parentId: "ask-lmstudio", title: "Proofread", contexts: ["selection"] },
   { id: "ask-factcheck", parentId: "ask-lmstudio", title: "Fact Check", contexts: ["selection"] },
   { id: "ask-research", parentId: "ask-lmstudio", title: "Research", contexts: ["selection"] },
-  { id: "ask-imagesource", parentId: "ask-lmstudio", title: "Image Source", contexts: ["image"] },
+  { id: "ask-imagesource", parentId: "ask-lmstudio", title: "Find Image Source", contexts: ["image"] },
   { id: "ask-summarize-page", parentId: "ask-lmstudio", title: "Summarize Page", contexts: ["page"] },
   { id: "ask-open", parentId: "ask-lmstudio", title: "Open Ask LM Studio", contexts: ["page"] },
 ];
@@ -144,7 +144,7 @@ const menuListener = async (info, tab) => {
     type: "ask-selection",
     mode: info.menuItemId || "ask-lmstudio",
     text: selection,
-    // Image Source context: menus API fills these only for the matching
+    // Find Image Source context: menus API fills these only for the matching
     // contexts (srcUrl for image clicks, linkUrl when the image is wrapped
     // in a link), so they stay null for selection/page prompts. srcUrl is
     // pre-clipped so an inline data: blob never travels the bus/queue.
