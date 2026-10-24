@@ -717,6 +717,21 @@ const NATIVE_PROMPTS = {
   "ask-proofread": "Please proofread the selection for spelling and grammar errors. Identify any mistakes and provide a corrected version of the text. Maintain the meaning and factual accuracy and output the list of proposed corrections first, followed by the final, corrected version of the text.",
 };
 
+// Extension-only prompt (no native genai.ftl equivalent): a structured fact
+// check of the selection. A local model has no live web access, so a check is
+// only trustworthy when it names what it is based on — the prompt makes the
+// model list the available sources (its training knowledge, plus the attached
+// page context when one is present) and give a confidence percentage per
+// claim, plus one overall correctness percentage for the whole selection.
+const FACT_CHECK_PROMPT =
+  "Fact-check the selection below. You are a local model with no live internet access, so the only available sources are your own training knowledge (say so, and mention its cutoff when it matters) and the attached PAGE CONTEXT, if one is present. " +
+  "First list every distinct factual claim in the selection. Then give each claim its own bullet containing, in this order:\n" +
+  "- the claim,\n" +
+  "- a verdict of True, False, Partly true, or Unverifiable,\n" +
+  "- the source(s) the verdict is based on, e.g. scientific consensus, official statistics, the historical record, or the attached page,\n" +
+  "- your confidence as a percentage from 0% to 100% — state it only after you have named those sources, never before.\n" +
+  "Finish with an **Overall** section: the sources you relied on for the whole check, and a single percentage for how much of the selection's factual content is correct. Never invent a citation — if you cannot verify a claim, mark it Unverifiable, use a low percentage, and name the kind of source that would settle it.";
+
 // One wrapper for every instruction+content prompt (XML-style tags so the
 // content is labeled and quotes inside it can't break the delimiter, block-
 // quoted so the model sees it as quoted data, 8k cap on the raw text).
@@ -741,6 +756,8 @@ function formatPromptForMode(mode, text) {
   if (Object.hasOwn(NATIVE_PROMPTS, mode)) return wrapPrompt(NATIVE_PROMPTS[mode], text);
   const sel = (text || "").slice(0, 8000);
   switch (mode) {
+    case "ask-factcheck":
+      return sel ? wrapPrompt(FACT_CHECK_PROMPT, sel) : ""; // selection-only: no claim to check without text
     case "ask-lmstudio":
     default:
       if (sel) return sel; // raw selection — user already knows what they selected

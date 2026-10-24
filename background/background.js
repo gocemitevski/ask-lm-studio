@@ -15,7 +15,8 @@ async function shouldShowOwnMenus() {
 // Menu definitions. No icons — matches the native "Ask {provider}" submenu
 // (GenAI.sys.mjs buildAskChatMenu), which is plain text with no
 // extension/brand icons. Selection items use verbatim native genai-prompts
-// labels (genai.ftl). The two page items (native shows "Summarize Page" +
+// labels (genai.ftl), except "Fact Check", which is an extension-only entry
+// (no native equivalent). The two page items (native shows "Summarize Page" +
 // "Open {provider}" instead of the selection prompts when nothing is
 // selected) are toggled in onShown below.
 const MENU_ITEMS = [
@@ -24,6 +25,7 @@ const MENU_ITEMS = [
   { id: "ask-quiz", parentId: "ask-lmstudio", title: "Quiz me", contexts: ["selection"] },
   { id: "ask-explain", parentId: "ask-lmstudio", title: "Explain this", contexts: ["selection"] },
   { id: "ask-proofread", parentId: "ask-lmstudio", title: "Proofread", contexts: ["selection"] },
+  { id: "ask-factcheck", parentId: "ask-lmstudio", title: "Fact Check", contexts: ["selection"] },
   { id: "ask-summarize-page", parentId: "ask-lmstudio", title: "Summarize Page", contexts: ["page"] },
   { id: "ask-open", parentId: "ask-lmstudio", title: "Open Ask LM Studio", contexts: ["page"] },
 ];
