@@ -23,7 +23,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
    - Enable `Serve on local network` if needed, and **Enable CORS** (required for `fetch` from Firefox).
    - Optional: enable **Require Authentication** and create a token via **Manage Tokens** — then paste that token into the extension's Options (API token). Without it the add-on can't talk to a server that requires auth.
 3. Load your model (or `lms load` on CLI).
-4. Verify: `curl http://localhost:1234/v1/models` should list your model.
+4. Verify: `curl http://localhost:1234/v1/models` should list your model (add `-H "Authorization: Bearer <your-token>"` if you enabled authentication).
 
 ## 2. Install extension in Firefox
 
