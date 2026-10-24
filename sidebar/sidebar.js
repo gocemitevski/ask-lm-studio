@@ -732,6 +732,20 @@ const FACT_CHECK_PROMPT =
   "- your confidence as a percentage from 0% to 100% — state it only after you have named those sources, never before.\n" +
   "Finish with an **Overall** section: the sources you relied on for the whole check, and a single percentage for how much of the selection's factual content is correct. Never invent a citation — if you cannot verify a claim, mark it Unverifiable, use a low percentage, and name the kind of source that would settle it.";
 
+// Extension-only prompt (no native genai.ftl equivalent): where a right-
+// clicked image most likely comes from. A local model can neither browse nor
+// see pixels, so it works only from the URLs (image, link, page) and any
+// attached page context — the prompt makes it name those as its sources,
+// put the confidence percentage after them, and end with concrete reverse-
+// image-search steps instead of pretending it already looked anything up.
+const IMAGE_SOURCE_PROMPT =
+  "Analyze the origin of the image described below. You are a local model with no live internet access and you cannot see image pixels, so your only sources are the URLs below (image, link, page), your training knowledge of how common sites and CDNs structure image URLs, and the attached PAGE CONTEXT, if one is present (a caption or alt text there may help). " +
+  "Answer in this order:\n" +
+  "1. **What the URLs reveal** — the host and what kind of service it is (origin server, CDN such as Cloudfront or Imgix, social-media blob host, wp-content/uploads, data URI), plus any filename or path hints.\n" +
+  "2. **Sources you used** — the specific URL parts, the page URL/title, and any caption or alt text from the attached page.\n" +
+  "3. **Probable origin** — one of: photo taken by the site itself, stock or agency image, CDN-served copy of an image hosted elsewhere, social-media repost, or generated image. State it only after listing your sources, then give a confidence percentage from 0% to 100%. Say Unverifiable with a low percentage when the URLs alone can't support a guess — do not invent a photographer, agency, or domain.\n" +
+  "4. **How to verify** — the reverse-image search that fits best (Google Lens at lens.google.com, TinEye at tineye.com, Bing Visual Search), instructing the user to search the image URL or upload the file, plus a note to check the page's own metadata and captions. Do not claim you performed any lookup yourself.";
+
 // One wrapper for every instruction+content prompt (XML-style tags so the
 // content is labeled and quotes inside it can't break the delimiter, block-
 // quoted so the model sees it as quoted data, 8k cap on the raw text).
@@ -900,6 +914,19 @@ async function isForThisWindow(msg) {
     return true;
   }
 }
+// Plain-text digest of the right-clicked image's URLs, wrapped in
+// <selection> by the caller. data: URIs are already clipped at capture time
+// in the background (so the blob never crosses the message bus or the queued
+// storage.session payloads) — this only caps pathological non-data URLs.
+function imageSourceDigest(item) {
+  const clip = (u) => String(u).slice(0, 2000);
+  const lines = [];
+  if (item.imageSrc) lines.push(`Image URL: ${clip(item.imageSrc)}`);
+  if (item.linkUrl) lines.push(`Link URL (the image is wrapped in this link): ${clip(item.linkUrl)}`);
+  if (item.pageUrl) lines.push(`Page URL: ${clip(item.pageUrl)}`);
+  return lines.join("\n");
+}
+
 // Shared handling for context-menu/queued prompts: either a pre-formatted
 // string or a {mode, text} payload. Used by the live onMessage listener and
 // by the pendingPrompts drain in init, so the rules live in exactly one place.
@@ -918,6 +945,18 @@ async function dispatchAskItem(item) {
   if (item.mode === "ask-summarize-page") {
     // Native "Summarize Page" menu item: attach current page, then prompt.
     await sendPagePrompt("ask-summarize");
+    return;
+  }
+  if (item.mode === "ask-imagesource") {
+    // Image context click: no selection, so formatPromptForMode (which only
+    // takes text) doesn't apply — build the prompt from the image fields.
+    if (!item.imageSrc) {
+      // Hand-queued/hand-built payload without a URL: guide instead of
+      // sending the model a prompt about nothing.
+      addMsg("system", "Tip: right-click directly on an image → Ask LM Studio → Image Source.");
+      return;
+    }
+    await sendChat(wrapPrompt(IMAGE_SOURCE_PROMPT, imageSourceDigest(item)));
     return;
   }
   if (item.mode === "ask-lmstudio" && !(item.text || "").trim()) {

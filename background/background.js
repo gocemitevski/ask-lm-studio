@@ -15,10 +15,10 @@ async function shouldShowOwnMenus() {
 // Menu definitions. No icons — matches the native "Ask {provider}" submenu
 // (GenAI.sys.mjs buildAskChatMenu), which is plain text with no
 // extension/brand icons. Selection items use verbatim native genai-prompts
-// labels (genai.ftl), except "Fact Check", which is an extension-only entry
-// (no native equivalent). The two page items (native shows "Summarize Page" +
-// "Open {provider}" instead of the selection prompts when nothing is
-// selected) are toggled in onShown below.
+// labels (genai.ftl); "Fact Check" (selection) and "Image Source" (image)
+// are extension-only entries (no native equivalent). The two page items
+// (native shows "Summarize Page" + "Open {provider}" instead of the
+// selection prompts when nothing is selected) are toggled in onShown below.
 const MENU_ITEMS = [
   { id: "ask-lmstudio", title: "Ask LM Studio", contexts: ["selection", "page"] },
   { id: "ask-summarize", parentId: "ask-lmstudio", title: "Summarize", contexts: ["selection"] },
@@ -26,6 +26,7 @@ const MENU_ITEMS = [
   { id: "ask-explain", parentId: "ask-lmstudio", title: "Explain this", contexts: ["selection"] },
   { id: "ask-proofread", parentId: "ask-lmstudio", title: "Proofread", contexts: ["selection"] },
   { id: "ask-factcheck", parentId: "ask-lmstudio", title: "Fact Check", contexts: ["selection"] },
+  { id: "ask-imagesource", parentId: "ask-lmstudio", title: "Image Source", contexts: ["image"] },
   { id: "ask-summarize-page", parentId: "ask-lmstudio", title: "Summarize Page", contexts: ["page"] },
   { id: "ask-open", parentId: "ask-lmstudio", title: "Open Ask LM Studio", contexts: ["page"] },
 ];
@@ -105,6 +106,21 @@ browser.action.onClicked.addListener(async () => {
   }
 });
 
+// A data: URI can be megabytes of inline base64. Clip it at capture time so
+// the blob never crosses the message bus or lands in the queued payloads in
+// storage.session — the mime-type prefix plus the length is all the model
+// needs (the base64 body has no analyzable URL structure). Non-data URLs are
+// normal web URLs; the 2000-char cap only guards against absurd query strings.
+function clipImageSrc(src) {
+  if (!src) return null;
+  if (src.startsWith("data:")) {
+    const comma = src.indexOf(",");
+    const header = (comma === -1 ? src.slice(0, 200) : src.slice(0, comma + 1)).slice(0, 200);
+    return `${header}… (inline image data omitted, ${src.length} chars)`;
+  }
+  return src.slice(0, 2000);
+}
+
 const menuListener = async (info, tab) => {
   // Native "Open {provider}" analog: just show the panel, no prompt.
   if (info.menuItemId === "ask-open") {
@@ -126,6 +142,13 @@ const menuListener = async (info, tab) => {
     type: "ask-selection",
     mode: info.menuItemId || "ask-lmstudio",
     text: selection,
+    // Image Source context: menus API fills these only for the matching
+    // contexts (srcUrl for image clicks, linkUrl when the image is wrapped
+    // in a link), so they stay null for selection/page prompts. srcUrl is
+    // pre-clipped so an inline data: blob never travels the bus/queue.
+    imageSrc: clipImageSrc(info.srcUrl),
+    linkUrl: info.linkUrl || null,
+    pageUrl: info.pageUrl || tab?.url || null,
     windowId: typeof tab?.windowId === "number" ? tab.windowId : null,
   };
 

@@ -11,6 +11,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 - 🔄 Model picker auto-loaded from LM Studio
 - 📄 “Attach page” in sidebar + right-click menus (on by default — if you install the enterprise policy, uncheck “Show Ask LM Studio in the right-click menu” in Options so you don't get a duplicate menu)
 - 🔎 “Fact Check” right-click action — check the facts in any selected text with your local model: every claim gets a True / False / Partly true / Unverifiable verdict, a confidence percentage, and the sources it was based on (training knowledge + the attached page, if any — local models can't browse), plus an overall correctness percentage for the selection
+- 🖼 “Image Source” right-click action — right-click any image to see where it most likely comes from: the model reads the image / link / page URLs (and the attached page, if any), reports what the host and filename reveal, its best guess at the origin (own photo / stock / CDN copy / social repost / generated) with a confidence percentage, and the reverse-image search — Google Lens, TinEye, Bing Visual Search — that verifies it. Note: the model can't see the image pixels or browse, so this analyzes URLs only
 - ⚙️ Options page for Base URL, model, system prompt, temperature, thinking mode
 - 🔒 Local-first — defaults to `http://localhost:1234`, no telemetry. If you set a custom Base URL (e.g. LAN `http://192.168.x.x:1234` or remote), page selections/context will go there — keep it local for full privacy, and use an `https://` Base URL if the server isn't on your machine so traffic is encrypted in transit (see [Privacy](#privacy-data-collection-disclosure)). Note: the extension requests `http://*/*` + `https://*/*` host access (shown as one “Access your data for all websites” item) so 📄 Attach page can run on any page and so chat can reach LM Studio — the local server sends no CORS headers, so without host access the browser would block it. Chat still goes only to your configured Base URL.
 
@@ -41,6 +42,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 - **Attach page** (footer) → asks about current tab.
 - ··· menu: Reload LM Studio, New chat, Show shortcut when selecting text, Settings…
 - Select text on any page → right-click → Ask LM Studio (Summarize / Quiz me / Explain this / Proofread / Fact Check).
+- Right-click an image → Ask LM Studio → Image Source.
 
 ## 4. Show LM Studio in Firefox's *native* AI chatbot (alongside Gemini / ChatGPT)
 
@@ -117,7 +119,8 @@ Ask LM Studio has **no telemetry, analytics, accounts, or third-party services**
 | --- | --- | --- |
 | Chat messages you type | Every message you send | Only the Base URL configured in Options — default `http://localhost:1234`, a program on your own machine |
 | Attached page text (first ~12,000 chars) or selected text (first ~8,000 chars) | Only when you click Attach page or a right-click prompt | Same configured server |
-| The page's URL | Only with attached page text (Attach page or “Summarize Page”) — never with selection-only prompts | Same configured server |
+| The page's URL | Only with attached page text (Attach page or “Summarize Page”) or an “Image Source” right-click prompt — never with selection-only prompts | Same configured server |
+| The image's URL and the link URL wrapping it (first ~2,000 chars each; a page's inline `data:` image is reduced to its MIME header and byte count — the image data itself is never sent) | Only when you right-click an image → Ask LM Studio → Image Source | Same configured server |
 
 - **Why:** solely to generate the model's reply — the extension's whole purpose. Nothing else (browsing history, identifiers, device info, usage statistics) is ever sent anywhere.
 - **Storage:** settings and chat history stay in the browser; the queued right-click prompt uses in-memory (`storage.session`) data that Firefox clears on exit, so nothing from private windows is retained across sessions. Whatever your configured server keeps is under your control.
