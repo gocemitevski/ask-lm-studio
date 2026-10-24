@@ -17,11 +17,16 @@ async function shouldShowOwnMenus() {
 // extension/brand icons. Selection items use verbatim native genai-prompts
 // labels (genai.ftl); "Fact Check" and "Research" (selection) and
 // "Find Image Source" (image) are extension-only entries (no native equivalent).
+// The parent deliberately lists "image" too: Firefox's "page" context is
+// exclusive — it does NOT apply when the click lands on an image (MDN:
+// "the click is not on an image or a nested iframe or a link") — so without
+// it the submenu would be hidden on image right-clicks and the image child
+// unreachable, even though the child's own context matches.
 // The two page items (native shows "Summarize Page" + "Open {provider}"
 // instead of the selection prompts when nothing is selected) are toggled in
 // onShown below.
 const MENU_ITEMS = [
-  { id: "ask-lmstudio", title: "Ask LM Studio", contexts: ["selection", "page"] },
+  { id: "ask-lmstudio", title: "Ask LM Studio", contexts: ["selection", "page", "image"] },
   { id: "ask-summarize", parentId: "ask-lmstudio", title: "Summarize", contexts: ["selection"] },
   { id: "ask-quiz", parentId: "ask-lmstudio", title: "Quiz me", contexts: ["selection"] },
   { id: "ask-explain", parentId: "ask-lmstudio", title: "Explain this", contexts: ["selection"] },
