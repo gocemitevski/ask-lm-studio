@@ -732,6 +732,22 @@ const FACT_CHECK_PROMPT =
   "- your confidence as a percentage from 0% to 100% — state it only after you have named those sources, never before.\n" +
   "Finish with an **Overall** section: the sources you relied on for the whole check, and a single percentage for how much of the selection's factual content is correct. Never invent a citation — if you cannot verify a claim, mark it Unverifiable, use a low percentage, and name the kind of source that would settle it.";
 
+// Extension-only prompt (no native genai.ftl equivalent): a research brief on
+// the selected term. A local model has no live web access, so the brief is
+// reasoning from its training knowledge (with the cutoff stated) plus any
+// attached page — the prompt makes it name sources before any confidence
+// statement, offer real viewpoints instead of manufacturing disagreement,
+// and end with pointers the user can actually verify, never fake citations.
+const RESEARCH_PROMPT =
+  "Research the selected term below and write a structured brief. You are a local model with no live internet access, so your sources are your training knowledge (state its cutoff when it matters) and the attached PAGE CONTEXT, if one is present. Never cite a source you are not sure exists — name what you relied on, and if something cannot be verified from those sources, say so and name the kind of source that would settle it. Answer in this order:\n" +
+  "1. **Definition** — what the term means; if it has several senses, say which one you are covering and note the others.\n" +
+  "2. **Key facts** — the core things known about it. Name the sources for each fact *before* stating your confidence in it.\n" +
+  "3. **Why it matters** — the significance, history, or context behind the term.\n" +
+  "4. **Multiple viewpoints** — competing interpretations, controversies, or common misconceptions about it, each attributed to the viewpoint that holds it. If the term is settled and undisputed, say that plainly instead of manufacturing disagreement.\n" +
+  "5. **Verify & go deeper** — concrete real-world places the user can check or read further (e.g. Wikipedia, official documentation, standards bodies, academic textbooks), as pointers only — do not pretend you opened or read them.\n" +
+  "6. **Follow-up questions** — 3 to 5 questions the user could ask next to dig deeper into this brief.\n" +
+  "Keep the brief scannable with these bold section labels.";
+
 // Extension-only prompt (no native genai.ftl equivalent): where a right-
 // clicked image most likely comes from. A local model can neither browse nor
 // see pixels, so it works only from the URLs (image, link, page) and any
@@ -772,6 +788,8 @@ function formatPromptForMode(mode, text) {
   switch (mode) {
     case "ask-factcheck":
       return sel ? wrapPrompt(FACT_CHECK_PROMPT, sel) : ""; // selection-only: no claim to check without text
+    case "ask-research":
+      return sel ? wrapPrompt(RESEARCH_PROMPT, sel) : ""; // selection-only: nothing to research without text
     case "ask-lmstudio":
     default:
       if (sel) return sel; // raw selection — user already knows what they selected

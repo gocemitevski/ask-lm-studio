@@ -11,6 +11,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 - 🔄 Model picker auto-loaded from LM Studio
 - 📄 “Attach page” in sidebar + right-click menus (on by default — if you install the enterprise policy, uncheck “Show Ask LM Studio in the right-click menu” in Options so you don't get a duplicate menu)
 - 🔎 “Fact Check” right-click action — check the facts in any selected text with your local model: every claim gets a True / False / Partly true / Unverifiable verdict, a confidence percentage, and the sources it was based on (training knowledge + the attached page, if any — local models can't browse), plus an overall correctness percentage for the selection
+- 📚 “Research” right-click action — select a term and right-click → Research: a structured brief from your local model — definition, key facts with sources, why it matters, multiple viewpoints or misconceptions, real places to verify and go deeper, plus follow-up questions to ask next. The model states its training-data cutoff when relevant and names its sources honestly (no browsing, no invented citations)
 - 🖼 “Image Source” right-click action — right-click any image to see where it most likely comes from: the model reads the image / link / page URLs (and the attached page, if any), reports what the host and filename reveal, its best guess at the origin (own photo / stock / CDN copy / social repost / generated) with a confidence percentage, and the reverse-image search — Google Lens, TinEye, Bing Visual Search — that verifies it. Note: the model can't see the image pixels or browse, so this analyzes URLs only
 - ⚙️ Options page for Base URL, model, system prompt, temperature, thinking mode
 - 🔒 Local-first — defaults to `http://localhost:1234`, no telemetry. If you set a custom Base URL (e.g. LAN `http://192.168.x.x:1234` or remote), page selections/context will go there — keep it local for full privacy, and use an `https://` Base URL if the server isn't on your machine so traffic is encrypted in transit (see [Privacy](#privacy-data-collection-disclosure)). Note: the extension requests `http://*/*` + `https://*/*` host access (shown as one “Access your data for all websites” item) so 📄 Attach page can run on any page and so chat can reach LM Studio — the local server sends no CORS headers, so without host access the browser would block it. Chat still goes only to your configured Base URL.
@@ -41,7 +42,7 @@ This fills the gap in Firefox's built-in [AI chatbot sidebar](https://support.mo
 - **Quick prompts** — Summarize / Explain this / Quiz me / Proofread, same labels and prompt texts as the built-in chatbot (Summarize uses typed composer text first, otherwise the attached page).
 - **Attach page** (footer) → asks about current tab.
 - ··· menu: Reload LM Studio, New chat, Show shortcut when selecting text, Settings…
-- Select text on any page → right-click → Ask LM Studio (Summarize / Quiz me / Explain this / Proofread / Fact Check).
+- Select text on any page → right-click → Ask LM Studio (Summarize / Quiz me / Explain this / Proofread / Fact Check / Research).
 - Right-click an image → Ask LM Studio → Image Source.
 
 ## 4. Show LM Studio in Firefox's *native* AI chatbot (alongside Gemini / ChatGPT)
